@@ -1,0 +1,24 @@
+# Secrets / local config
+config.php
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs & temp
+*.log
+/tmp/
+
+# Uploaded sound files (keep the folder, ignore large audio)
+assets/sounds/*.mp3
+assets/sounds/*.wav
+assets/sounds/*.ogg
+!assets/sounds/.gitkeep

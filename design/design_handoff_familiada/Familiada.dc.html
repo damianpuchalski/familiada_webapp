@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;700;800&family=Share+Tech+Mono&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; -webkit-font-smoothing: antialiased; }
+    a { color: oklch(0.75 0.17 85); }
+    a:hover { color: oklch(0.82 0.17 85); }
+    @keyframes ledIgnite { 0% { opacity: 0; filter: brightness(3); } 30% { opacity: 1; filter: brightness(0.4); } 55% { opacity: 0.6; filter: brightness(2.5); } 100% { opacity: 1; filter: brightness(1); } }
+    @keyframes ledIgniteRed { 0% { opacity: 0; filter: brightness(3); } 30% { opacity: 1; filter: brightness(0.3); } 60% { opacity: 0.7; filter: brightness(2.2); } 100% { opacity: 1; filter: brightness(1); } }
+    @keyframes glowPulse { 0% { text-shadow: 0 0 0px oklch(0.78 0.17 85 / 0); } 40% { text-shadow: 0 0 40px oklch(0.78 0.17 85 / 0.9); } 100% { text-shadow: 0 0 0px oklch(0.78 0.17 85 / 0); } }
+    @keyframes stealBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes cueFlash { 0% { box-shadow: 0 0 0 0 oklch(0.78 0.17 85 / 0.9); } 100% { box-shadow: 0 0 0 14px oklch(0.78 0.17 85 / 0); } }
+  </style>
+</helmet>
+
+<div style="width:100%; height:100vh; background:oklch(0.13 0.02 260); display:flex; flex-direction:column; font-family:'Space Grotesk',sans-serif;">
+
+  <div style="height:44px; min-height:44px; display:flex; align-items:center; justify-content:center; gap:10px; background:oklch(0.17 0.02 260); border-bottom:1px solid oklch(0.28 0.03 260); flex-shrink:0;">
+    <span style="color:oklch(0.55 0.02 260); font-size:11px; letter-spacing:0.08em; margin-right:6px;">PODGLĄD</span>
+    <button onClick="{{ setBoard }}" style="padding:6px 16px; border-radius:6px; border:1px solid oklch(0.32 0.03 260); background:oklch(0.24 0.02 260); color:oklch(0.94 0.01 260); font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; cursor:pointer;" style-hover="background:oklch(0.28 0.02 260);">Plansza</button>
+    <button onClick="{{ requestCockpit }}" style="padding:6px 16px; border-radius:6px; border:1px solid oklch(0.32 0.03 260); background:oklch(0.24 0.02 260); color:oklch(0.94 0.01 260); font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; cursor:pointer;" style-hover="background:oklch(0.28 0.02 260);">Prezenter</button>
+    <button onClick="{{ requestAdmin }}" style="padding:6px 16px; border-radius:6px; border:1px solid oklch(0.32 0.03 260); background:oklch(0.24 0.02 260); color:oklch(0.94 0.01 260); font-family:'Space Grotesk',sans-serif; font-size:13px; font-weight:600; cursor:pointer;" style-hover="background:oklch(0.28 0.02 260);">Administrator</button>
+  </div>
+
+  <sc-if value="{{ isBoard }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:1; min-height:0; position:relative; overflow:hidden; background:radial-gradient(ellipse 90% 75% at 50% 45%, oklch(0.16 0.05 300) 0%, oklch(0.1 0.03 275) 38%, oklch(0.06 0.01 260) 72%); display:flex; flex-direction:column;">
+      <div style="position:absolute; inset:0; background:radial-gradient(circle at 8% 15%, oklch(0.5 0.19 25 / 0.35) 0%, transparent 45%), radial-gradient(circle at 92% 15%, oklch(0.5 0.18 250 / 0.35) 0%, transparent 45%); pointer-events:none;"></div>
+      <div style="position:absolute; width:1500px; height:1500px; border-radius:50%; border:3px solid oklch(0.62 0.22 25); opacity:0.55; top:-1180px; left:-1180px; box-shadow:0 0 60px oklch(0.62 0.22 25 / 0.6); pointer-events:none;"></div>
+      <div style="position:absolute; width:1250px; height:1250px; border-radius:50%; border:2px solid oklch(0.65 0.22 25); opacity:0.7; top:-1030px; left:-1030px; box-shadow:0 0 30px oklch(0.65 0.22 25 / 0.5); pointer-events:none;"></div>
+      <div style="position:absolute; width:1500px; height:1500px; border-radius:50%; border:3px solid oklch(0.62 0.2 250); opacity:0.55; top:-1180px; right:-1180px; box-shadow:0 0 60px oklch(0.62 0.2 250 / 0.6); pointer-events:none;"></div>
+      <div style="position:absolute; width:1250px; height:1250px; border-radius:50%; border:2px solid oklch(0.65 0.2 250); opacity:0.7; top:-1030px; right:-1030px; box-shadow:0 0 30px oklch(0.65 0.2 250 / 0.5); pointer-events:none;"></div>
+
+      <div style="position:relative; z-index:2; text-align:center; padding:78px 40px 0; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:clamp(22px,2.6vw,34px); color:oklch(0.96 0.01 260); text-wrap:pretty;">{{ question }}</div>
+
+      <sc-if value="{{ isSteal }}" hint-placeholder-val="{{ false }}">
+        <div style="{{ stealBannerStyle }}">KRADZIEŻ — {{ stealTeamLabel }}</div>
+      </sc-if>
+
+      <div style="position:relative; z-index:2; flex:1; min-height:0; display:flex; align-items:center; justify-content:center; gap:14px; padding:6px 18px 24px;">
+
+        <div style="{{ scoreBoxRedStyle }}">{{ scoreRed }}</div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center;">
+          <sc-if value="{{ leftBigStrike }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ bigGlyphWrapStyle }}"><div style="{{ bigGlyphBarStyle }}"></div><div style="{{ bigGlyphBarStyle2 }}"></div></div>
+          </sc-if>
+          <sc-if value="{{ leftNormalStrikes }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ strikesArr }}" as="s" hint-placeholder-count="3">
+              <div style="{{ s.glyphWrapStyle }}">
+                <div style="{{ s.glyphBarStyle }}"></div>
+                <div style="{{ s.glyphBarStyle2 }}"></div>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+
+        <div style="{{ panelWrapStyle }}">
+
+          <div style="position:absolute; top:-34px; left:50%; transform:translateX(-50%); width:104px; height:64px; border-radius:12px; border:3px solid oklch(0.72 0.13 220); background:#050505; display:flex; align-items:center; justify-content:center; z-index:4; box-shadow:0 0 22px -2px oklch(0.72 0.13 220 / 0.7);">
+            <div style="{{ roundPointsStyle }}">{{ roundPoints }}</div>
+          </div>
+
+          <div style="border-radius:26px; border:3px solid oklch(0.42 0.03 260); background:repeating-linear-gradient(0deg, oklch(0.09 0.01 260) 0px, oklch(0.09 0.01 260) 3px, oklch(0.115 0.01 260) 3px, oklch(0.115 0.01 260) 4px); padding:34px 40px 14px; box-shadow:0 0 40px -10px oklch(0.6 0.05 260 / 0.6), inset 0 0 60px oklch(0 0 0 / 0.6);">
+
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <sc-for list="{{ answers }}" as="a" hint-placeholder-count="6">
+                <div style="display:flex; align-items:baseline; gap:16px; padding:4px 4px;">
+                  <div style="{{ a.ledIndexStyle }}">{{ a.indexLabel }}</div>
+                  <div style="{{ a.ledTextStyle }}">{{ a.ledLabel }}</div>
+                  <div style="{{ a.ledDotStyle }}"></div>
+                  <div style="{{ a.ledPointsStyle }}">{{ a.ledPointsLabel }}</div>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="display:flex; align-items:center; justify-content:flex-end; padding-top:18px; margin-top:12px; border-top:1px solid oklch(0.24 0.02 260);">
+              <div style="font-family:'Share Tech Mono',monospace; font-size:20px; letter-spacing:0.1em; color:oklch(0.78 0.17 85); text-shadow:0 0 10px oklch(0.78 0.17 85 / 0.6);">SUMA {{ roundPoints }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:12px; align-items:center; justify-content:center;">
+          <sc-if value="{{ rightBigStrike }}" hint-placeholder-val="{{ false }}">
+            <div style="{{ bigGlyphWrapStyle }}"><div style="{{ bigGlyphBarStyle }}"></div><div style="{{ bigGlyphBarStyle2 }}"></div></div>
+          </sc-if>
+          <sc-if value="{{ rightNormalStrikes }}" hint-placeholder-val="{{ true }}">
+            <sc-for list="{{ strikesArr }}" as="s" hint-placeholder-count="3">
+              <div style="{{ s.glyphWrapStyle }}">
+                <div style="{{ s.glyphBarStyle }}"></div>
+                <div style="{{ s.glyphBarStyle2 }}"></div>
+              </div>
+            </sc-for>
+          </sc-if>
+        </div>
+
+        <div style="{{ scoreBoxBlueStyle }}">{{ scoreBlue }}</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isCockpit }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1; min-height:0; display:grid; grid-template-columns:1fr 340px; grid-template-rows:56px 1fr; background:oklch(0.15 0.02 260); color:oklch(0.94 0.01 260);">
+
+      <div style="grid-column:1 / 3; display:flex; align-items:center; justify-content:space-between; padding:0 22px; border-bottom:1px solid oklch(0.28 0.03 260); background:oklch(0.17 0.02 260);">
+        <div style="display:flex; align-items:center; gap:14px;">
+          <span style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:16px; letter-spacing:0.06em; color:oklch(0.94 0.01 260);">FAMILIADA</span>
+          <span style="font-size:11px; letter-spacing:0.1em; color:oklch(0.55 0.02 260);">PANEL STEROWANIA</span>
+          <span style="font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:oklch(0.94 0.01 260); background:oklch(0.24 0.02 260); border:1px solid oklch(0.32 0.03 260); padding:4px 10px; border-radius:6px;">RUNDA {{ round }}</span>
+          <span style="font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:oklch(0.12 0.02 260); background:oklch(0.78 0.17 85); padding:4px 10px; border-radius:6px;">× {{ multiplier }}</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:oklch(0.6 0.02 260);">
+          <span style="width:8px; height:8px; border-radius:50%; background:oklch(0.7 0.17 145); display:inline-block;"></span>
+          ZESTAW DŹWIĘKÓW GRY · {{ soundSet }}
+        </div>
+      </div>
+
+      <div style="overflow:auto; padding:18px 20px; display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:11px; letter-spacing:0.1em; color:oklch(0.55 0.02 260); margin-bottom:-2px;">PYTANIE</div>
+        <div style="font-size:16px; font-weight:600; padding-bottom:8px; border-bottom:1px solid oklch(0.26 0.03 260);">{{ question }}</div>
+
+        <sc-for list="{{ answers }}" as="a" hint-placeholder-count="6">
+          <div style="{{ a.rowStyle }}">
+            <div style="font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:oklch(0.55 0.02 260); width:22px;">{{ a.indexLabel }}</div>
+            <div style="flex:1; font-size:15px; font-weight:500;">{{ a.text }}</div>
+            <div style="font-family:'Orbitron',sans-serif; font-weight:700; font-size:14px; color:oklch(0.78 0.17 85); width:34px; text-align:right;">{{ a.points }}</div>
+            <div style="{{ a.statusStyle }}">{{ a.statusLabel }}</div>
+            <button onClick="{{ a.reveal }}" disabled="{{ a.revealDisabled }}" style="{{ a.revealBtnStyle }}">{{ a.revealBtnLabel }}</button>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="border-left:1px solid oklch(0.28 0.03 260); background:oklch(0.16 0.02 260); padding:18px 16px; display:flex; flex-direction:column; gap:16px; overflow:auto;">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+          <div style="{{ scoreBlueCardStyle }}">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:0.08em;"><span style="width:10px;height:10px;border:2px solid currentColor;border-radius:2px;"></span>NIEBIESCY</div>
+            <div style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:30px; margin-top:4px;">{{ scoreBlue }}</div>
+          </div>
+          <div style="{{ scoreRedCardStyle }}">
+            <div style="display:flex; align-items:center; gap:6px; font-size:11px; letter-spacing:0.08em; justify-content:flex-end;">CZERWONI<span style="width:10px;height:10px;border:2px solid currentColor;transform:rotate(45deg);"></span></div>
+            <div style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:30px; margin-top:4px; text-align:right;">{{ scoreRed }}</div>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:11px; letter-spacing:0.08em; color:oklch(0.55 0.02 260); margin-bottom:6px;">DRUŻYNA / KRADZIEŻ</div>
+          <div style="display:flex; gap:6px;">
+            <button onClick="{{ selectBlue }}" disabled="{{ teamSelectLocked }}" style="{{ selectBlueBtnStyle }}">NIEBIESCY</button>
+            <button onClick="{{ selectRed }}" disabled="{{ teamSelectLocked }}" style="{{ selectRedBtnStyle }}">CZERWONI</button>
+          </div>
+          <sc-if value="{{ isSteal }}" hint-placeholder-val="{{ false }}">
+            <div style="margin-top:8px; font-size:12px; font-weight:700; color:oklch(0.75 0.19 60); background:oklch(0.28 0.06 60); border:1px solid oklch(0.4 0.1 60); padding:6px 10px; border-radius:6px; text-align:center;">KRADZIEŻ AKTYWNA</div>
+          </sc-if>
+        </div>
+
+        <div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+            <span style="font-size:11px; letter-spacing:0.08em; color:oklch(0.55 0.02 260);">BŁĘDY</span>
+            <span style="font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700;">{{ strikeCount }} / 3</span>
+          </div>
+          <div style="display:flex; gap:8px; margin-bottom:10px;">
+            <sc-for list="{{ strikesArr }}" as="s" hint-placeholder-count="3">
+              <div style="{{ s.miniStyle }}"></div>
+            </sc-for>
+          </div>
+          <button onClick="{{ strike }}" disabled="{{ strikeDisabled }}" style="{{ strikeBtnStyle }}">{{ strikeBtnLabel }}</button>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <button onClick="{{ finishRound }}" style="padding:12px; border-radius:8px; border:none; background:oklch(0.68 0.17 145); color:oklch(0.1 0.02 260); font-weight:800; font-size:13px; cursor:pointer; letter-spacing:0.03em;" style-hover="background:oklch(0.72 0.17 145);">ZAKOŃCZ RUNDĘ</button>
+        </div>
+
+        <div>
+          <div style="font-size:11px; letter-spacing:0.08em; color:oklch(0.55 0.02 260); margin-bottom:6px;">DŹWIĘKI · WYZWÓL RĘCZNIE</div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <sc-for list="{{ cues }}" as="c" hint-placeholder-count="6">
+              <button onClick="{{ c.fire }}" style="{{ c.style }}">{{ c.name }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1; min-height:0; display:flex; align-items:center; justify-content:center; position:relative; overflow:auto; background:oklch(0.12 0.02 260); padding:40px 20px;">
+      <div style="position:absolute; inset:0; background:radial-gradient(circle at 50% 28%, oklch(0.18 0.03 260) 0%, oklch(0.12 0.02 260) 65%); pointer-events:none;"></div>
+
+      <div style="position:relative; z-index:1; width:100%; max-width:380px; background:oklch(0.16 0.02 260); border:1px solid oklch(0.28 0.03 260); border-radius:14px; padding:36px 32px 30px; box-shadow:0 20px 60px -20px oklch(0 0 0 / 0.6);">
+
+        <div style="display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:6px;">
+          <span style="width:8px; height:8px; border-radius:50%; background:oklch(0.78 0.17 85); box-shadow:0 0 8px oklch(0.78 0.17 85 / 0.7); flex-shrink:0;"></span>
+          <span style="font-family:'Orbitron',sans-serif; font-weight:800; font-size:18px; letter-spacing:0.06em; color:oklch(0.94 0.01 260);">FAMILIADA</span>
+        </div>
+        <div style="text-align:center; font-size:11px; letter-spacing:0.12em; color:oklch(0.55 0.02 260); margin-bottom:26px;">PANEL STEROWANIA</div>
+
+        <sc-if value="{{ sessionExpiredDemo }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:flex-start; gap:8px; background:oklch(0.2 0.02 260); border:1px solid oklch(0.32 0.03 260); border-radius:8px; padding:10px 12px; margin-bottom:20px; font-size:12.5px; line-height:1.4; color:oklch(0.75 0.02 260);">
+            <span style="width:6px; height:6px; border-radius:50%; background:oklch(0.75 0.13 85); flex-shrink:0; margin-top:5px;"></span>
+            <span>Sesja wygasła. Zaloguj się ponownie, aby wrócić do panelu.</span>
+          </div>
+        </sc-if>
+
+        <label style="display:block; font-size:11px; letter-spacing:0.08em; color:oklch(0.6 0.02 260); margin-bottom:8px;">HASŁO HOSTA</label>
+
+        <div style="position:relative;">
+          <input ref="{{ loginInputRef }}" type="{{ loginInputType }}" value="{{ loginPw }}" onChange="{{ setLoginPw }}" onKeyDown="{{ onLoginKeyDown }}" autoFocus="{{ true }}" placeholder="Wprowadź hasło" style="{{ loginInputStyle }}" style-focus="border-color:oklch(0.78 0.17 85); box-shadow:0 0 0 3px oklch(0.78 0.17 85 / 0.18);" />
+          <button onClick="{{ toggleLoginShow }}" style="position:absolute; right:4px; top:50%; transform:translateY(-50%); background:none; border:none; color:oklch(0.6 0.02 260); font-family:'Space Grotesk',sans-serif; font-size:11px; font-weight:700; letter-spacing:0.05em; padding:8px 10px; cursor:pointer;" style-hover="color:oklch(0.78 0.17 85);">{{ loginToggleLabel }}</button>
+        </div>
+
+        <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex; align-items:center; gap:6px; margin-top:10px; font-size:12.5px; color:oklch(0.72 0.12 40);">
+            <span style="width:5px; height:5px; border-radius:50%; background:oklch(0.72 0.12 40); flex-shrink:0;"></span>
+            Nieprawidłowe hasło. Spróbuj ponownie.
+          </div>
+        </sc-if>
+
+        <button onClick="{{ submitLogin }}" disabled="{{ loginButtonDisabled }}" style="{{ loginSubmitStyle }}" style-hover="background:oklch(0.82 0.17 85);">{{ loginButtonLabel }}</button>
+
+        <div style="text-align:center; font-size:12px; color:oklch(0.5 0.02 260); margin-top:22px; line-height:1.5;">
+          Dostęp tylko dla prowadzącego.<br />Tablica wyników nie wymaga logowania.
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isAdmin }}" hint-placeholder-val="{{ false }}">
+    <div style="flex:1; min-height:0; overflow:auto; background:oklch(0.13 0.02 260); color:oklch(0.94 0.01 260); padding:28px 40px; font-family:'Space Grotesk',sans-serif;">
+
+      <sc-if value="{{ showAdminTabs }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; gap:8px; margin-bottom:24px; border-bottom:1px solid oklch(0.26 0.03 260); padding-bottom:14px;">
+          <button onClick="{{ selectGamesTab }}" style="{{ gamesTabBtnStyle }}">Gry</button>
+          <button onClick="{{ selectSoundsTab }}" style="{{ soundsTabBtnStyle }}">Dźwięki</button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isGamesList }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;">
+          <div style="font-weight:700; font-size:22px;">Gry</div>
+          <button onClick="{{ newGame }}" style="padding:10px 18px; border-radius:8px; border:none; background:oklch(0.78 0.17 85); color:oklch(0.12 0.02 260); font-weight:700; font-size:13px; cursor:pointer;">+ Nowa gra</button>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <sc-for list="{{ games }}" as="g" hint-placeholder-count="4">
+            <div style="{{ g.rowStyle }}">
+              <div style="{{ g.statusDotStyle }}"></div>
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:15px;">{{ g.name }}</div>
+                <div style="font-size:12px; color:oklch(0.6 0.02 260); margin-top:2px;">{{ g.metaLine }}</div>
+              </div>
+              <div style="{{ g.statusBadgeStyle }}">{{ g.statusLabel }}</div>
+              <sc-if value="{{ g.canEdit }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ g.edit }}" style="padding:8px 14px; border-radius:7px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.94 0.01 260); font-size:12px; font-weight:700; cursor:pointer;">Edytuj</button>
+              </sc-if>
+              <sc-if value="{{ g.canResume }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ g.resume }}" style="padding:8px 14px; border-radius:7px; border:1px solid oklch(0.4 0.1 60); background:oklch(0.24 0.06 60); color:oklch(0.9 0.1 60); font-size:12px; font-weight:700; cursor:pointer;">Wznów</button>
+              </sc-if>
+              <sc-if value="{{ g.canSetLive }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ g.setLive }}" style="padding:8px 14px; border-radius:7px; border:none; background:oklch(0.68 0.17 145); color:oklch(0.1 0.02 260); font-size:12px; font-weight:700; cursor:pointer;">Ustaw jako live</button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSounds }}" hint-placeholder-val="{{ false }}">
+        <div style="font-weight:700; font-size:22px; margin-bottom:6px;">Dźwięki</div>
+        <div style="font-size:13px; color:oklch(0.55 0.02 260); margin-bottom:18px; max-width:560px; line-height:1.5;">Każdy zestaw dźwięków ma własną bibliotekę. Gra korzysta z zestawu wybranego w jej edytorze — wgraj pliki do właściwego zestawu poniżej.</div>
+        <div style="display:flex; gap:6px; margin-bottom:22px;">
+          <sc-for list="{{ soundSetViewTabs }}" as="sst" hint-placeholder-count="3">
+            <button onClick="{{ sst.select }}" style="{{ sst.style }}">{{ sst.name }}</button>
+          </sc-for>
+        </div>
+        <div style="display:flex; flex-direction:column; gap:10px; max-width:640px;">
+          <sc-for list="{{ soundLibrary }}" as="snd" hint-placeholder-count="6">
+            <div style="display:flex; align-items:center; gap:14px; padding:14px 16px; border-radius:10px; border:1px solid oklch(0.28 0.03 260); background:oklch(0.17 0.02 260);">
+              <div style="flex:1;">
+                <div style="font-weight:700; font-size:14px;">{{ snd.label }}</div>
+                <div style="font-size:12px; color:oklch(0.55 0.02 260); margin-top:2px;">{{ snd.statusLabel }}</div>
+              </div>
+              <sc-if value="{{ snd.hasFile }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ snd.play }}" style="padding:8px 12px; border-radius:7px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.94 0.01 260); font-size:12px; font-weight:700; cursor:pointer;">▶ Odsłuchaj</button>
+                <button onClick="{{ snd.remove }}" style="padding:8px 12px; border-radius:7px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.75 0.02 260); font-size:12px; font-weight:700; cursor:pointer;">Usuń</button>
+              </sc-if>
+              <label style="padding:8px 14px; border-radius:7px; border:none; background:oklch(0.78 0.17 85); color:oklch(0.12 0.02 260); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">
+                {{ snd.uploadLabel }}
+                <input type="file" accept="audio/*" onChange="{{ snd.onUpload }}" style="display:none;" />
+              </label>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isEditor }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex; align-items:center; gap:14px; margin-bottom:22px;">
+          <button onClick="{{ cancelEditor }}" style="padding:8px 14px; border-radius:7px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.94 0.01 260); font-size:12px; font-weight:700; cursor:pointer;">← Wróć</button>
+          <div style="font-weight:700; font-size:20px;">Edytor gry</div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1.4fr; gap:16px; margin-bottom:26px;">
+          <div>
+            <div style="font-size:11px; letter-spacing:0.06em; color:oklch(0.55 0.02 260); margin-bottom:6px;">NAZWA GRY</div>
+            <input value="{{ draftName }}" onChange="{{ setDraftNameInput }}" style="{{ inputStyle }}"/>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:0.06em; color:oklch(0.55 0.02 260); margin-bottom:6px;">TRYB</div>
+            <div style="display:flex; gap:6px;">
+              <button onClick="{{ setModeClassic }}" style="{{ modeClassicBtnStyle }}">Klasyczny</button>
+              <button onClick="{{ setModeFree }}" style="{{ modeFreeBtnStyle }}">Wolne rundy</button>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:0.06em; color:oklch(0.55 0.02 260); margin-bottom:6px;">FINAŁ</div>
+            <button onClick="{{ toggleFinale }}" style="{{ finaleBtnStyle }}">{{ finaleLabel }}</button>
+          </div>
+          <div>
+            <div style="font-size:11px; letter-spacing:0.06em; color:oklch(0.55 0.02 260); margin-bottom:6px;">ZESTAW DŹWIĘKÓW</div>
+            <div style="display:flex; gap:6px;">
+              <sc-for list="{{ draftSoundSets }}" as="ss" hint-placeholder-count="3">
+                <button onClick="{{ ss.select }}" style="{{ ss.style }}">{{ ss.name }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="font-weight:700; font-size:15px; margin-bottom:12px;">Pytania i odpowiedzi</div>
+        <sc-for list="{{ draftQuestions }}" as="q" hint-placeholder-count="1">
+          <div style="border:1px solid oklch(0.28 0.03 260); border-radius:12px; padding:16px; margin-bottom:14px; background:oklch(0.16 0.02 260);">
+            <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+              <div style="width:26px; height:26px; border-radius:50%; background:oklch(0.24 0.02 260); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex-shrink:0;">{{ q.num }}</div>
+              <input value="{{ q.text }}" onChange="{{ q.setText }}" placeholder="Treść pytania" style="{{ inputStyle }}"/>
+              <button onClick="{{ q.remove }}" style="padding:8px 12px; border-radius:7px; border:1px solid oklch(0.4 0.1 20); background:oklch(0.24 0.06 20); color:oklch(0.85 0.15 20); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;">Usuń pytanie</button>
+            </div>
+            <sc-for list="{{ q.answers }}" as="a" hint-placeholder-count="6">
+              <div style="display:flex; gap:8px; margin-bottom:6px; align-items:center; padding-left:36px;">
+                <input value="{{ a.text }}" onChange="{{ a.setText }}" placeholder="Odpowiedź" style="{{ inputStyle }}"/>
+                <input value="{{ a.pointsStr }}" onChange="{{ a.setPoints }}" placeholder="Pkt" style="{{ smallInputStyle }}"/>
+                <button onClick="{{ a.remove }}" style="width:30px; height:30px; border-radius:7px; border:1px solid oklch(0.32 0.02 260); background:oklch(0.2 0.02 260); color:oklch(0.8 0.02 260); font-size:14px; cursor:pointer;">×</button>
+              </div>
+            </sc-for>
+            <button onClick="{{ q.addAnswer }}" style="margin-top:6px; margin-left:36px; padding:6px 12px; border-radius:7px; border:1px solid oklch(0.32 0.02 260); background:oklch(0.2 0.02 260); color:oklch(0.8 0.02 260); font-size:12px; font-weight:700; cursor:pointer;">+ odpowiedź</button>
+          </div>
+        </sc-for>
+        <button onClick="{{ addQuestion }}" style="padding:10px 16px; border-radius:8px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.94 0.01 260); font-size:13px; font-weight:700; cursor:pointer; margin-bottom:24px;">+ Dodaj pytanie</button>
+
+        <div style="display:flex; gap:10px;">
+          <button onClick="{{ saveDraft }}" style="padding:12px 22px; border-radius:8px; border:none; background:oklch(0.68 0.17 145); color:oklch(0.1 0.02 260); font-weight:800; font-size:13px; cursor:pointer;">Zapisz grę</button>
+          <button onClick="{{ cancelEditor }}" style="padding:12px 22px; border-radius:8px; border:1px solid oklch(0.34 0.03 260); background:oklch(0.22 0.02 260); color:oklch(0.94 0.01 260); font-weight:700; font-size:13px; cursor:pointer;">Odrzuć zmiany</button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 1440, &quot;height&quot;: 810}, &quot;reducedMotion&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;}, &quot;multiplierStart&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;2&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;]}, &quot;soundSetName&quot;: {&quot;editor&quot;: &quot;enum&quot;, &quot;default&quot;: &quot;Klasyczny&quot;, &quot;tsType&quot;: &quot;string&quot;, &quot;options&quot;: [&quot;Klasyczny&quot;, &quot;Retro&quot;, &quot;Filmowy&quot;]}, &quot;sessionExpiredDemo&quot;: {&quot;editor&quot;: &quot;boolean&quot;, &quot;default&quot;: false, &quot;tsType&quot;: &quot;boolean&quot;, &quot;section&quot;: &quot;Logowanie&quot;}}">
+class Component extends DCLogic {
+  static blankCueSet() {
+    return [
+      { key: 'correct', label: 'Poprawna odpowiedź', fileName: null, url: null },
+      { key: 'strike', label: 'Strike / Buzzer', fileName: null, url: null },
+      { key: 'roundStart', label: 'Start rundy', fileName: null, url: null },
+      { key: 'reveal', label: 'Odkrycie odpowiedzi', fileName: null, url: null },
+      { key: 'finalClock', label: 'Zegar finału', fileName: null, url: null },
+      { key: 'gameEnd', label: 'Koniec gry', fileName: null, url: null }
+    ];
+  }
+  questionSets = [
+    { question: 'Podaj rzecz, którą zawsze zabierasz na wakacje', answers: [
+      { text: 'Telefon', points: 32 }, { text: 'Ładowarka', points: 24 }, { text: 'Krem do słońca', points: 18 },
+      { text: 'Okulary słoneczne', points: 14 }, { text: 'Ręcznik', points: 8 }, { text: 'Książka', points: 4 }
+    ] },
+    { question: 'Wymień coś, co robisz, gdy nie możesz zasnąć', answers: [
+      { text: 'Scrolluję telefon', points: 29 }, { text: 'Liczę owce', points: 22 }, { text: 'Piję ciepłe mleko', points: 19 },
+      { text: 'Czytam książkę', points: 15 }, { text: 'Włączam telewizor', points: 9 }, { text: 'Wstaję i chodzę', points: 6 }
+    ] }
+  ];
+
+  state = {
+    view: 'board',
+    qIndex: 0,
+    question: this.questionSets[0].question,
+    answers: this.questionSets[0].answers.map(a => ({ ...a, revealed: false })),
+    strikes: 0,
+    currentTeam: 'blue',
+    isSteal: false,
+    multiplier: parseInt(this.props?.multiplierStart ?? '2', 10),
+    scores: { blue: 180, red: 210 },
+    soundSet: this.props?.soundSetName ?? 'Klasyczny',
+    justRevealedIndex: null,
+    pointsPulse: false,
+    justStruck: null,
+    stealOutcome: null,
+    firingCue: null,
+    adminTab: 'games',
+    editingGameId: null,
+    editorDraft: null,
+    soundLibrary: {
+      Klasyczny: Component.blankCueSet(), Retro: Component.blankCueSet(), Filmowy: Component.blankCueSet()
+    },
+    adminSoundSetView: 'Klasyczny',
+    authed: false,
+    loginPw: '',
+    loginShow: false,
+    loginError: false,
+    loginSubmitting: false,
+    loginTarget: 'cockpit',
+    games: [
+      { id: 'g1', name: 'Familiada — Odcinek 42', mode: 'classic', finale: true, soundSet: 'Klasyczny', status: 'live', created: '2026-07-10', lastPlayed: '2026-07-15', scoreBlue: 180, scoreRed: 210 },
+      { id: 'g2', name: 'Familiada — Turniej Firmowy', mode: 'free', finale: false, soundSet: 'Retro', status: 'draft', created: '2026-07-12', lastPlayed: null, scoreBlue: 0, scoreRed: 0,
+        questions: [
+          { text: 'Podaj rzecz, którą zabierasz na biwak', answers: [{ text: 'Namiot', points: 30 }, { text: 'Latarka', points: 22 }, { text: 'Śpiwór', points: 18 }, { text: 'Jedzenie', points: 15 }, { text: 'Gitara', points: 10 }, { text: 'Mapa', points: 5 }] }
+        ] },
+      { id: 'g3', name: 'Familiada — Odcinek 41', mode: 'classic', finale: true, soundSet: 'Klasyczny', status: 'finished', created: '2026-07-01', lastPlayed: '2026-07-08', scoreBlue: 300, scoreRed: 260 },
+      { id: 'g4', name: 'Familiada — Wieczór Testowy', mode: 'classic', finale: true, soundSet: 'Filmowy', status: 'in_progress', created: '2026-07-13', lastPlayed: '2026-07-14', scoreBlue: 90, scoreRed: 60 },
+      { id: 'g5', name: 'Familiada — Archiwalna', mode: 'free', finale: false, soundSet: 'Klasyczny', status: 'archived', created: '2026-05-20', lastPlayed: '2026-05-20', scoreBlue: 210, scoreRed: 180 }
+    ]
+  };
+
+  reveal(i) {
+    if (this.state.answers[i].revealed) return;
+    if (this.state.isSteal && this.state.stealOutcome) return;
+    const answers = this.state.answers.map((a, idx) => idx === i ? { ...a, revealed: true } : a);
+    this.setState({ answers, justRevealedIndex: i, pointsPulse: true });
+    setTimeout(() => this.setState({ justRevealedIndex: null }), 650);
+    setTimeout(() => this.setState({ pointsPulse: false }), 650);
+    if (this.state.isSteal) {
+      this.setState({ stealOutcome: 'success' });
+    }
+  }
+
+  strike() {
+    if (this.state.isSteal) {
+      if (this.state.stealOutcome) return;
+      this.setState({ stealOutcome: 'failed', justStruck: 1 });
+      setTimeout(() => this.setState({ justStruck: null }), 600);
+      return;
+    }
+    if (this.state.strikes >= 3) return;
+    const next = this.state.strikes + 1;
+    this.setState({ strikes: next, justStruck: next });
+    setTimeout(() => this.setState({ justStruck: null }), 600);
+    if (next >= 3) {
+      setTimeout(() => {
+        this.setState(s => ({ isSteal: true, currentTeam: s.currentTeam === 'blue' ? 'red' : 'blue', stealOutcome: null }));
+      }, 700);
+    }
+  }
+
+  selectTeam(team) {
+    if (this.state.answers.filter(a => a.revealed).length >= 3) return;
+    this.setState({ currentTeam: team, isSteal: false, stealOutcome: null });
+  }
+
+  finishRound() {
+    this.setState(s => {
+      const winner = s.isSteal
+        ? (s.stealOutcome === 'success' ? s.currentTeam : (s.currentTeam === 'blue' ? 'red' : 'blue'))
+        : s.currentTeam;
+      const pot = s.answers.filter(a => a.revealed).reduce((sum, a) => sum + a.points, 0) * s.multiplier;
+      const scores = { ...s.scores, [winner]: s.scores[winner] + pot };
+      const nextQ = (s.qIndex + 1) % this.questionSets.length;
+      const qs = this.questionSets[nextQ];
+      return {
+        scores, qIndex: nextQ, question: qs.question,
+        answers: qs.answers.map(a => ({ ...a, revealed: false })),
+        strikes: 0, isSteal: false, currentTeam: 'blue', stealOutcome: null,
+        justRevealedIndex: null, justStruck: null
+      };
+    });
+  }
+
+  setSoundSet(name) { this.setState({ soundSet: name }); }
+  fireCue(name) { this.setState({ firingCue: name }); setTimeout(() => this.setState({ firingCue: null }), 400); }
+  setView(v) { this.setState({ view: v }); }
+
+  loginInputRef = React.createRef();
+
+  requestGate(target) {
+    if (this.state.authed) { this.setView(target); return; }
+    this.setState({ view: 'login', loginTarget: target, loginError: false, loginPw: '' });
+  }
+  setLoginPw(v) { this.setState({ loginPw: v, loginError: false }); }
+  toggleLoginShow() { this.setState(s => ({ loginShow: !s.loginShow })); }
+  submitLogin() {
+    if (this.state.loginSubmitting || !this.state.loginPw) return;
+    this.setState({ loginSubmitting: true, loginError: false });
+    clearTimeout(this._loginTimer);
+    this._loginTimer = setTimeout(() => {
+      const ok = this.state.loginPw === 'familiada';
+      if (ok) this.setState({ authed: true, loginSubmitting: false, view: this.state.loginTarget, loginPw: '', loginError: false });
+      else this.setState({ loginSubmitting: false, loginError: true });
+    }, 700);
+  }
+  componentDidUpdate(prevProps, prevState) {
+    if (this.state.view === 'login' && prevState.view !== 'login' && this.loginInputRef.current) {
+      this.loginInputRef.current.focus();
+    }
+  }
+
+  todayStr() { return new Date().toISOString().slice(0, 10); }
+
+  setAdminTab(tab) { this.setState({ adminTab: tab }); }
+
+  uploadSound(setName, key, file) {
+    if (!file) return;
+    const url = URL.createObjectURL(file);
+    this.setState(s => ({
+      soundLibrary: { ...s.soundLibrary, [setName]: s.soundLibrary[setName].map(x => x.key === key ? { ...x, fileName: file.name, url } : x) }
+    }));
+  }
+  playSound(setName, key) {
+    const item = this.state.soundLibrary[setName].find(x => x.key === key);
+    if (item && item.url) new Audio(item.url).play();
+  }
+  removeSound(setName, key) {
+    this.setState(s => ({
+      soundLibrary: { ...s.soundLibrary, [setName]: s.soundLibrary[setName].map(x => x.key === key ? { ...x, fileName: null, url: null } : x) }
+    }));
+  }
+  setAdminSoundSetView(name) { this.setState({ adminSoundSetView: name }); }
+
+  blankQuestion() { return { text: '', answers: Array.from({ length: 6 }, () => ({ text: '', points: 0 })) }; }
+
+  newGame() {
+    this.setState({
+      editingGameId: null,
+      editorDraft: { name: 'Nowa gra', mode: 'classic', finale: true, soundSet: 'Klasyczny', questions: [this.blankQuestion()] },
+      adminTab: 'editor'
+    });
+  }
+
+  editGame(id) {
+    const g = this.state.games.find(x => x.id === id);
+    if (!g) return;
+    const sourceQuestions = (g.questions && g.questions.length ? g.questions : this.questionSets.map(qs => ({ text: qs.question, answers: qs.answers })));
+    this.setState({
+      editingGameId: id,
+      editorDraft: {
+        name: g.name, mode: g.mode, finale: g.finale, soundSet: g.soundSet,
+        questions: sourceQuestions.map(q => ({ text: q.text, answers: q.answers.map(a => ({ text: a.text, points: a.points })) }))
+      },
+      adminTab: 'editor'
+    });
+  }
+
+  cancelEditor() { this.setState({ adminTab: 'games', editorDraft: null, editingGameId: null }); }
+
+  setDraftName(value) { this.setState(s => ({ editorDraft: { ...s.editorDraft, name: value } })); }
+  setDraftMode(mode) { this.setState(s => ({ editorDraft: { ...s.editorDraft, mode } })); }
+  toggleDraftFinale() { this.setState(s => ({ editorDraft: { ...s.editorDraft, finale: !s.editorDraft.finale } })); }
+  setDraftSoundSet(name) { this.setState(s => ({ editorDraft: { ...s.editorDraft, soundSet: name } })); }
+
+  setQuestionText(qi, value) {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.map((q, i) => i === qi ? { ...q, text: value } : q) } }));
+  }
+  addQuestion() {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: [...s.editorDraft.questions, this.blankQuestion()] } }));
+  }
+  removeQuestion(qi) {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.filter((_, i) => i !== qi) } }));
+  }
+  setAnswerText(qi, ai, value) {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.map((q, i) => i !== qi ? q : { ...q, answers: q.answers.map((a, j) => j === ai ? { ...a, text: value } : a) }) } }));
+  }
+  setAnswerPoints(qi, ai, value) {
+    const num = parseInt(value, 10) || 0;
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.map((q, i) => i !== qi ? q : { ...q, answers: q.answers.map((a, j) => j === ai ? { ...a, points: num } : a) }) } }));
+  }
+  addAnswer(qi) {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.map((q, i) => (i === qi && q.answers.length < 8) ? { ...q, answers: [...q.answers, { text: '', points: 0 }] } : q) } }));
+  }
+  removeAnswer(qi, ai) {
+    this.setState(s => ({ editorDraft: { ...s.editorDraft, questions: s.editorDraft.questions.map((q, i) => i !== qi ? q : { ...q, answers: q.answers.filter((_, j) => j !== ai) }) } }));
+  }
+
+  saveDraft() {
+    this.setState(s => {
+      const draft = s.editorDraft;
+      let games;
+      if (s.editingGameId) {
+        games = s.games.map(g => g.id === s.editingGameId ? { ...g, name: draft.name, mode: draft.mode, finale: draft.finale, soundSet: draft.soundSet, questions: draft.questions } : g);
+      } else {
+        const id = 'g-' + Date.now();
+        games = [...s.games, { id, name: draft.name, mode: draft.mode, finale: draft.finale, soundSet: draft.soundSet, questions: draft.questions, status: 'draft', created: this.todayStr(), lastPlayed: null, scoreBlue: 0, scoreRed: 0 }];
+      }
+      return { games, adminTab: 'games', editorDraft: null, editingGameId: null };
+    });
+  }
+
+  setLiveGame(id) {
+    this.setState(s => ({ games: s.games.map(g => g.id === id ? { ...g, status: 'live' } : (g.status === 'live' ? { ...g, status: 'draft' } : g)) }));
+  }
+
+  resumeGame() { this.setState({ view: 'cockpit' }); }
+
+  renderVals() {
+    const s = this.state;
+    const reduced = !!this.props?.reducedMotion;
+    const mult = s.multiplier;
+    const roundPoints = s.answers.filter(a => a.revealed).reduce((sum, a) => sum + a.points, 0) * mult;
+
+    const blue = 'oklch(0.62 0.19 250)';
+    const red = 'oklch(0.60 0.22 18)';
+    const amber = 'oklch(0.78 0.17 85)';
+
+    const answers = s.answers.map((a, i) => ({
+      text: a.text, points: a.points, revealed: a.revealed, hidden: !a.revealed,
+      indexLabel: String(i + 1),
+      ledLabel: a.revealed ? a.text.toUpperCase() : '',
+      ledPointsLabel: a.revealed ? String(a.points) : '',
+      ledIndexStyle: {
+        width: '30px', fontFamily: "'Share Tech Mono',monospace", fontSize: '25px',
+        color: amber, textShadow: `0 0 8px ${amber}`
+      },
+      ledTextStyle: {
+        flexShrink: 0, fontFamily: "'Share Tech Mono',monospace", fontSize: '25px', letterSpacing: '3px',
+        color: a.revealed ? amber : 'transparent', textShadow: a.revealed ? `0 0 10px ${amber}` : 'none',
+        animation: (!reduced && s.justRevealedIndex === i) ? 'ledIgnite 0.6s ease-out' : 'none'
+      },
+      ledDotStyle: {
+        flex: 1, alignSelf: 'center', height: 0, marginBottom: '7px',
+        borderBottom: '3px dotted oklch(0.42 0.09 85 / 0.55)'
+      },
+      ledPointsStyle: {
+        width: '54px', textAlign: 'right', fontFamily: "'Share Tech Mono',monospace", fontSize: '25px',
+        color: a.revealed ? amber : 'transparent', textShadow: a.revealed ? `0 0 10px ${amber}` : 'none'
+      },
+      slotStyle: {
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderRadius: '10px', transformStyle: 'preserve-3d',
+        background: a.revealed ? 'linear-gradient(180deg, oklch(0.24 0.03 255), oklch(0.18 0.02 258))' : 'oklch(0.16 0.02 260)',
+        border: a.revealed ? '1px solid oklch(0.5 0.1 250)' : '1px solid oklch(0.28 0.02 260)',
+        boxShadow: a.revealed ? '0 0 24px -4px oklch(0.6 0.18 250 / 0.6)' : 'none'
+      },
+      rowStyle: {
+        display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', borderRadius: '8px',
+        background: a.revealed ? 'oklch(0.20 0.02 260)' : 'oklch(0.18 0.015 260)',
+        border: '1px solid oklch(0.26 0.03 260)', opacity: a.revealed ? 0.72 : 1
+      },
+      statusLabel: a.revealed ? 'ODKRYTA' : 'UKRYTA',
+      statusStyle: {
+        fontSize: '11px', fontWeight: 700, letterSpacing: '0.05em', width: '76px', textAlign: 'center',
+        padding: '3px 6px', borderRadius: '5px',
+        color: a.revealed ? 'oklch(0.15 0.02 145)' : 'oklch(0.7 0.02 260)',
+        background: a.revealed ? 'oklch(0.68 0.17 145)' : 'oklch(0.26 0.02 260)'
+      },
+      revealBtnLabel: 'ODKRYJ',
+      revealDisabled: a.revealed || (s.isSteal && !!s.stealOutcome),
+      revealBtnStyle: {
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em',
+        padding: '8px 12px', borderRadius: '6px', border: 'none', minWidth: '108px',
+        cursor: (a.revealed || (s.isSteal && !!s.stealOutcome)) ? 'default' : 'pointer',
+        background: (a.revealed || (s.isSteal && !!s.stealOutcome)) ? 'oklch(0.24 0.02 260)' : amber,
+        color: (a.revealed || (s.isSteal && !!s.stealOutcome)) ? 'oklch(0.5 0.02 260)' : 'oklch(0.12 0.02 260)'
+      },
+      reveal: () => this.reveal(i)
+    }));
+
+    const strikesArr = [0, 1, 2].map(i => {
+      const active = i < s.strikes;
+      const justHit = !reduced && s.justStruck === i + 1;
+      const barBase = {
+        position: 'absolute', top: '50%', left: 0, width: '100%', height: '3px', borderRadius: '2px',
+        background: red, boxShadow: `0 0 8px ${red}`,
+        animation: justHit ? 'ledIgniteRed 0.5s ease-out' : 'none'
+      };
+      return {
+        active,
+        style: {
+          width: '58px', height: '58px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontFamily: "'Share Tech Mono',monospace", fontSize: '30px', fontWeight: 700,
+          color: active ? 'oklch(0.97 0.01 260)' : 'transparent',
+          background: active ? red : 'oklch(0.17 0.02 260)',
+          border: `2px solid ${active ? red : 'oklch(0.3 0.02 260)'}`,
+          boxShadow: active ? `0 0 20px -2px ${red}` : 'none'
+        },
+        miniStyle: {
+          width: '28px', height: '28px', borderRadius: '6px',
+          background: active ? red : 'oklch(0.22 0.02 260)',
+          border: `1px solid ${active ? red : 'oklch(0.32 0.02 260)'}`
+        },
+        glyphWrapStyle: { position: 'relative', width: '22px', height: '22px', opacity: active ? 1 : 0 },
+        glyphBarStyle: { ...barBase, transform: 'translateY(-50%) rotate(45deg)' },
+        glyphBarStyle2: { ...barBase, transform: 'translateY(-50%) rotate(-45deg)' }
+      };
+    });
+
+    const scoreBoxStyle = (active, color) => ({
+      width: '110px', height: '76px', borderRadius: '14px', flexShrink: 0,
+      border: `3px solid ${color}`, background: '#050505', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontFamily: "'Share Tech Mono',monospace", fontSize: '32px', color: amber,
+      boxShadow: active ? `0 0 24px -2px ${color}` : `0 0 10px -4px ${color}`,
+      opacity: active ? 1 : 0.75
+    });
+
+    const soundSets = ['Klasyczny', 'Retro', 'Filmowy'].map(name => ({
+      name, select: () => this.setSoundSet(name),
+      style: {
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: '11px', fontWeight: 700, padding: '6px 10px',
+        borderRadius: '6px', cursor: 'pointer', border: `1px solid ${name === s.soundSet ? amber : 'oklch(0.32 0.02 260)'}`,
+        background: name === s.soundSet ? amber : 'oklch(0.2 0.02 260)',
+        color: name === s.soundSet ? 'oklch(0.12 0.02 260)' : 'oklch(0.8 0.02 260)'
+      }
+    }));
+
+    const cues = ['Poprawna odpowiedź', 'Strike / Buzzer', 'Start rundy', 'Odkrycie odpowiedzi', 'Zegar finału', 'Koniec gry'].map(name => ({
+      name, fire: () => this.fireCue(name),
+      style: {
+        fontFamily: "'Space Grotesk',sans-serif", fontSize: '11px', fontWeight: 600, padding: '8px 6px',
+        borderRadius: '6px', border: '1px solid oklch(0.3 0.02 260)', cursor: 'pointer',
+        background: 'oklch(0.2 0.02 260)', color: 'oklch(0.85 0.01 260)',
+        animation: (!reduced && s.firingCue === name) ? 'cueFlash 0.4s ease-out' : 'none'
+      }
+    }));
+
+    const scoreCard = (active, color) => ({
+      padding: '10px 12px', borderRadius: '8px', background: 'oklch(0.19 0.02 260)',
+      border: `1px solid ${active ? color : 'oklch(0.28 0.03 260)'}`, color,
+      boxShadow: active ? `0 0 16px -4px ${color}` : 'none'
+    });
+
+    const teamSelectLocked = s.answers.filter(a => a.revealed).length >= 3;
+    const teamSelectBtn = (active, color) => ({
+      flex: 1, padding: '9px 8px', borderRadius: '7px', fontSize: '12px', fontWeight: 700,
+      cursor: teamSelectLocked ? 'default' : 'pointer',
+      border: `1px solid ${active ? color : 'oklch(0.32 0.02 260)'}`,
+      background: active ? color : 'oklch(0.2 0.02 260)',
+      color: active ? 'oklch(0.1 0.02 260)' : 'oklch(0.8 0.02 260)',
+      opacity: teamSelectLocked ? 0.5 : 1
+    });
+
+    return {
+      isBoard: s.view === 'board', isCockpit: s.view === 'cockpit', isAdmin: s.view === 'admin', isLogin: s.view === 'login',
+      setBoard: () => this.setView('board'), requestCockpit: () => this.requestGate('cockpit'), requestAdmin: () => this.requestGate('admin'),
+      loginInputRef: this.loginInputRef,
+      loginPw: s.loginPw,
+      loginInputType: s.loginShow ? 'text' : 'password',
+      loginToggleLabel: s.loginShow ? 'SKRYJ' : 'POKAŻ',
+      loginError: s.loginError,
+      loginSubmitting: s.loginSubmitting,
+      loginButtonLabel: s.loginSubmitting ? 'Sprawdzanie…' : 'Odblokuj panel',
+      loginButtonDisabled: s.loginSubmitting || !s.loginPw,
+      sessionExpiredDemo: !!(this.props?.sessionExpiredDemo && !s.authed),
+      setLoginPw: (e) => this.setLoginPw(e.target.value),
+      toggleLoginShow: () => this.toggleLoginShow(),
+      submitLogin: () => this.submitLogin(),
+      onLoginKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); this.submitLogin(); } },
+      loginInputStyle: {
+        width: '100%', padding: '13px 50px 13px 14px', borderRadius: '8px',
+        border: `1.5px solid ${s.loginError ? 'oklch(0.68 0.14 40)' : 'oklch(0.32 0.03 260)'}`,
+        background: 'oklch(0.12 0.015 260)', color: 'oklch(0.95 0.01 260)', fontSize: '15px',
+        fontFamily: "'Share Tech Mono',monospace", letterSpacing: '0.05em', outline: 'none'
+      },
+      loginSubmitStyle: {
+        width: '100%', marginTop: '18px', padding: '14px', borderRadius: '9px', border: 'none',
+        background: amber, color: 'oklch(0.12 0.02 260)', fontFamily: "'Orbitron',sans-serif",
+        fontWeight: 700, fontSize: '14px', letterSpacing: '0.04em',
+        cursor: (s.loginSubmitting || !s.loginPw) ? 'default' : 'pointer',
+        opacity: (!s.loginPw) ? 0.5 : (s.loginSubmitting ? 0.8 : 1)
+      },
+      question: s.question, round: s.qIndex + 1, multiplier: mult,
+      answers, strikesArr,
+      strikeCount: s.strikes,
+      strikeDisabled: s.isSteal ? !!s.stealOutcome : s.strikes >= 3,
+      strikeBtnLabel: s.isSteal ? (s.stealOutcome === 'failed' ? 'KRADZIEŻ NIEUDANA' : 'BŁĄD · KRADZIEŻ NIEUDANA') : 'BŁĄD',
+      roundPoints,
+      roundPointsStyle: {
+        fontFamily: "'Share Tech Mono',monospace", fontWeight: 400, fontSize: '32px', lineHeight: 1,
+        color: amber, textShadow: `0 0 14px ${amber}`,
+        animation: (!reduced && s.pointsPulse) ? 'glowPulse 0.6s ease-out' : 'none'
+      },
+      isSteal: s.isSteal, stealTeamLabel: s.currentTeam === 'blue' ? 'NIEBIESCY' : 'CZERWONI',
+      stealBannerStyle: {
+        position: 'relative', zIndex: 4, width: 'fit-content', margin: '4px auto 0',
+        fontFamily: "'Share Tech Mono',monospace", fontSize: '13px', fontWeight: 700, letterSpacing: '0.08em',
+        padding: '8px 18px', borderRadius: '999px', color: 'oklch(0.97 0.01 260)',
+        background: s.currentTeam === 'blue' ? blue : red,
+        animation: reduced ? 'none' : 'stealBlink 1.2s ease-in-out infinite'
+      },
+      panelWrapStyle: { position: 'relative', width: 'min(940px,74%)', marginTop: s.isSteal ? '92px' : '46px' },
+      scoreBoxRedStyle: scoreBoxStyle(s.currentTeam === 'red', red),
+      scoreBoxBlueStyle: scoreBoxStyle(s.currentTeam === 'blue', blue),
+      leftBigStrike: s.isSteal && s.currentTeam === 'red',
+      leftNormalStrikes: !(s.isSteal && s.currentTeam === 'red'),
+      rightBigStrike: s.isSteal && s.currentTeam === 'blue',
+      rightNormalStrikes: !(s.isSteal && s.currentTeam === 'blue'),
+      bigGlyphWrapStyle: { position: 'relative', width: '42px', height: '42px', opacity: s.stealOutcome === 'failed' ? 1 : 0.35 },
+      bigGlyphBarStyle: {
+        position: 'absolute', top: '50%', left: 0, width: '100%', height: '6px', borderRadius: '3px',
+        background: s.stealOutcome === 'failed' ? red : 'oklch(0.4 0.02 260)',
+        boxShadow: s.stealOutcome === 'failed' ? `0 0 14px ${red}` : 'none',
+        transform: 'translateY(-50%) rotate(45deg)',
+        animation: (!reduced && s.justStruck === 1) ? 'ledIgniteRed 0.5s ease-out' : 'none'
+      },
+      bigGlyphBarStyle2: {
+        position: 'absolute', top: '50%', left: 0, width: '100%', height: '6px', borderRadius: '3px',
+        background: s.stealOutcome === 'failed' ? red : 'oklch(0.4 0.02 260)',
+        boxShadow: s.stealOutcome === 'failed' ? `0 0 14px ${red}` : 'none',
+        transform: 'translateY(-50%) rotate(-45deg)',
+        animation: (!reduced && s.justStruck === 1) ? 'ledIgniteRed 0.5s ease-out' : 'none'
+      },
+      scoreBlue: s.scores.blue, scoreRed: s.scores.red,
+      scoreBlueCardStyle: scoreCard(s.currentTeam === 'blue', blue),
+      scoreRedCardStyle: scoreCard(s.currentTeam === 'red', red),
+      selectBlue: () => this.selectTeam('blue'), selectRed: () => this.selectTeam('red'),
+      teamSelectLocked,
+      selectBlueBtnStyle: teamSelectBtn(s.currentTeam === 'blue', blue),
+      selectRedBtnStyle: teamSelectBtn(s.currentTeam === 'red', red),
+      strike: () => this.strike(),
+      strikeBtnStyle: {
+        width: '100%', padding: '12px', borderRadius: '8px', border: 'none', fontWeight: 800, fontSize: '13px',
+        letterSpacing: '0.03em', cursor: (!s.isSteal && s.strikes >= 3) ? 'default' : 'pointer',
+        background: (!s.isSteal && s.strikes >= 3) ? 'oklch(0.24 0.02 260)' : red,
+        color: (!s.isSteal && s.strikes >= 3) ? 'oklch(0.5 0.02 260)' : 'oklch(0.97 0.01 260)'
+      },
+      finishRound: () => this.finishRound(),
+      soundSet: s.soundSet, soundSets, cues,
+      ...this.adminVals(s, amber)
+    };
+  }
+
+  adminVals(s, amber) {
+    const statusMeta = {
+      draft: { label: 'SZKIC', color: 'oklch(0.6 0.02 260)' },
+      live: { label: 'LIVE', color: 'oklch(0.7 0.19 145)' },
+      in_progress: { label: 'W TRAKCIE', color: amber },
+      finished: { label: 'ZAKOŃCZONA', color: 'oklch(0.65 0.15 250)' },
+      archived: { label: 'ARCHIWALNA', color: 'oklch(0.45 0.02 260)' }
+    };
+    const games = s.games.map(g => {
+      const meta = statusMeta[g.status];
+      const modeLabel = g.mode === 'classic' ? 'Klasyczny (300)' : 'Wolne rundy';
+      let metaLine = `${modeLabel} · utworzono ${g.created}`;
+      if (g.lastPlayed) metaLine += ` · ostatnia gra ${g.lastPlayed}`;
+      if (g.status === 'finished') metaLine += ` · wynik ${g.scoreBlue}:${g.scoreRed}`;
+      return {
+        id: g.id, name: g.name, metaLine,
+        statusLabel: meta.label,
+        statusBadgeStyle: {
+          fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', padding: '4px 10px', borderRadius: '999px',
+          color: g.status === 'live' ? 'oklch(0.1 0.02 145)' : 'oklch(0.94 0.01 260)',
+          background: g.status === 'live' ? meta.color : 'oklch(0.24 0.02 260)',
+          border: `1px solid ${meta.color}`
+        },
+        statusDotStyle: { width: '10px', height: '10px', borderRadius: '50%', background: meta.color, boxShadow: g.status === 'live' ? `0 0 10px ${meta.color}` : 'none', flexShrink: 0 },
+        rowStyle: {
+          display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 16px', borderRadius: '10px',
+          background: 'oklch(0.17 0.02 260)', border: g.status === 'live' ? `1px solid ${meta.color}` : '1px solid oklch(0.26 0.03 260)'
+        },
+        canEdit: g.status === 'draft',
+        canResume: g.status === 'in_progress',
+        canSetLive: g.status !== 'live',
+        edit: () => this.editGame(g.id),
+        resume: () => this.resumeGame(g.id),
+        setLive: () => this.setLiveGame(g.id)
+      };
+    });
+
+    const ed = s.editorDraft || { name: '', mode: 'classic', finale: true, soundSet: 'Klasyczny', questions: [] };
+    const toggleBtn = (active) => ({
+      flex: 1, padding: '8px 10px', borderRadius: '7px', fontSize: '12px', fontWeight: 700, cursor: 'pointer',
+      border: `1px solid ${active ? amber : 'oklch(0.32 0.02 260)'}`,
+      background: active ? amber : 'oklch(0.2 0.02 260)',
+      color: active ? 'oklch(0.12 0.02 260)' : 'oklch(0.8 0.02 260)'
+    });
+    const inputStyle = {
+      flex: 1, padding: '9px 12px', borderRadius: '7px', border: '1px solid oklch(0.3 0.02 260)',
+      background: 'oklch(0.18 0.015 260)', color: 'oklch(0.94 0.01 260)', fontSize: '13px', fontFamily: "'Space Grotesk',sans-serif"
+    };
+    const smallInputStyle = { ...inputStyle, flex: '0 0 64px', textAlign: 'center' };
+
+    const draftQuestions = ed.questions.map((q, qi) => ({
+      num: qi + 1,
+      text: q.text,
+      setText: (e) => this.setQuestionText(qi, e.target.value),
+      remove: () => this.removeQuestion(qi),
+      addAnswer: () => this.addAnswer(qi),
+      answers: q.answers.map((a, ai) => ({
+        text: a.text, pointsStr: String(a.points),
+        setText: (e) => this.setAnswerText(qi, ai, e.target.value),
+        setPoints: (e) => this.setAnswerPoints(qi, ai, e.target.value),
+        remove: () => this.removeAnswer(qi, ai)
+      }))
+    }));
+
+    return {
+      isGamesList: s.adminTab === 'games', isEditor: s.adminTab === 'editor', isSounds: s.adminTab === 'sounds',
+      showAdminTabs: s.adminTab !== 'editor',
+      selectGamesTab: () => this.setAdminTab('games'), selectSoundsTab: () => this.setAdminTab('sounds'),
+      gamesTabBtnStyle: {
+        padding: '8px 16px', borderRadius: '7px', border: '1px solid oklch(0.32 0.03 260)', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+        background: s.adminTab === 'games' ? amber : 'oklch(0.2 0.02 260)', color: s.adminTab === 'games' ? 'oklch(0.12 0.02 260)' : 'oklch(0.85 0.01 260)'
+      },
+      soundsTabBtnStyle: {
+        padding: '8px 16px', borderRadius: '7px', border: '1px solid oklch(0.32 0.03 260)', fontSize: '13px', fontWeight: 700, cursor: 'pointer',
+        background: s.adminTab === 'sounds' ? amber : 'oklch(0.2 0.02 260)', color: s.adminTab === 'sounds' ? 'oklch(0.12 0.02 260)' : 'oklch(0.85 0.01 260)'
+      },
+      soundLibrary: s.soundLibrary[s.adminSoundSetView].map(snd => ({
+        key: snd.key, label: snd.label, hasFile: !!snd.fileName,
+        statusLabel: snd.fileName ? snd.fileName : 'Brak przypisanego pliku — odtwarzany będzie dźwięk domyślny.',
+        uploadLabel: snd.fileName ? 'Zamień plik' : 'Wybierz plik',
+        play: () => this.playSound(s.adminSoundSetView, snd.key), remove: () => this.removeSound(s.adminSoundSetView, snd.key),
+        onUpload: (e) => this.uploadSound(s.adminSoundSetView, snd.key, e.target.files[0])
+      })),
+      adminSoundSetView: s.adminSoundSetView,
+      soundSetViewTabs: ['Klasyczny', 'Retro', 'Filmowy'].map(name => ({
+        name, select: () => this.setAdminSoundSetView(name),
+        style: {
+          fontFamily: "'Space Grotesk',sans-serif", fontSize: '12px', fontWeight: 700, padding: '8px 16px',
+          borderRadius: '7px', cursor: 'pointer', border: `1px solid ${name === s.adminSoundSetView ? amber : 'oklch(0.32 0.02 260)'}`,
+          background: name === s.adminSoundSetView ? amber : 'oklch(0.2 0.02 260)',
+          color: name === s.adminSoundSetView ? 'oklch(0.12 0.02 260)' : 'oklch(0.8 0.02 260)'
+        }
+      })),
+      games, newGame: () => this.newGame(), cancelEditor: () => this.cancelEditor(), saveDraft: () => this.saveDraft(),
+      draftName: ed.name, setDraftNameInput: (e) => this.setDraftName(e.target.value),
+      modeClassicBtnStyle: toggleBtn(ed.mode === 'classic'), modeFreeBtnStyle: toggleBtn(ed.mode === 'free'),
+      setModeClassic: () => this.setDraftMode('classic'), setModeFree: () => this.setDraftMode('free'),
+      finaleLabel: ed.finale ? 'Finał: włączony' : 'Finał: wyłączony',
+      finaleBtnStyle: toggleBtn(ed.finale), toggleFinale: () => this.toggleDraftFinale(),
+      draftSoundSets: ['Klasyczny', 'Retro', 'Filmowy'].map(name => ({ name, select: () => this.setDraftSoundSet(name), style: toggleBtn(name === ed.soundSet) })),
+      draftQuestions, addQuestion: () => this.addQuestion(),
+      inputStyle, smallInputStyle
+    };
+  }
+}
+</script>
+</body>
+</html>

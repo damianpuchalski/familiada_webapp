@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "projectName": "familiada",
+  "description": "Familiada (Family Feud) web game — PHP/MySQL. See docs/ for the spec and .claude/agents/ for the architect, developer, and tester roles.",
+  "agents": {
+    "architect": ".claude/agents/architect.md",
+    "developer": ".claude/agents/developer.md",
+    "tester": ".claude/agents/tester.md"
+  },
+  "conventions": {
+    "docsAreSourceOfTruth": true,
+    "readBeforeCoding": [
+      "docs/ARCHITECTURE.md",
+      "docs/DATA_MODEL.md",
+      "docs/GAME_RULES.md"
+    ]
+  }
+}
