@@ -34,7 +34,17 @@ python deploy/sync.py --all --apply       # both
 ```
 Requirements: Python 3 (uses only stdlib `ftplib`) and an `ssh` client for `--db`. No `lftp`/local `mysql` client needed. The sync is upload-only — it does not delete files removed from the repo, so clean those by hand if you rename/delete tracked paths. Prefer `FTP_PROTOCOL=ftps` in `deploy.local.env` if the host supports it (plain FTP sends credentials in cleartext).
 
-> **BLOCKER before first deploy — private-path resolution.** The public PHP loads the private code with relative requires like `require __DIR__ . '/../../src/lib/config.php'` (see `public/api/_bootstrap.php`, `public/index.php`, `public/admin/*.php`). That only resolves when `src/` sits one level above the deployed public files — true in the repo, but **false on the server**, where public lands in `websites/owl-it/familiada/` and private in `~/familiada_private/` (a different subtree). As-is, every page will fatal with "failed to open stream". Fix this **before** running `--files --apply`: introduce a single path anchor (e.g. a tiny `paths.php` in the public root that `define()`s the absolute private path, or set it via `.htaccess`/`php_value auto_prepend_file`), and point the requires at it. Until then the sync script correctly *places* the files, but the app won't run.
+### Private-path resolution (why the app finds `src/` across subtrees)
+The public PHP can't reach the private code with a fixed relative path, because on the server public (`websites/owl-it/familiada/`) and private (`~/familiada_private/`) are in different subtrees. Instead, every public entry point requires `public/paths.php` first, which resolves the private directory into the `FAMILIADA_PRIVATE_DIR` constant, in this order:
+1. `FAMILIADA_PRIVATE_DIR` from the environment (`$_SERVER`/`getenv`) — e.g. `SetEnv FAMILIADA_PRIVATE_DIR /home/<user>/familiada_private` in `public/.htaccess`.
+2. A gitignored `public/private_path.local.php` returning the absolute path. **`deploy/sync.py` writes this automatically** when `SERVER_PRIVATE_ABS_PATH` is set in `deploy.local.env`.
+3. Fallback: the parent of `public/` — correct for local dev, where `src/` sits directly above `public/`.
+
+If none resolve to a real private folder, `paths.php` returns a clear HTTP 500 explaining what to set (never an opaque "failed to open stream"). So: set `SERVER_PRIVATE_ABS_PATH` (the **absolute FS path**, not the FTP path — confirm with `echo $HOME` over SSH) and the anchor is handled for you on `--files --apply`.
+
+> **Also set in the server's `config.php`** (it lives in the private dir, so its relative defaults are wrong for the split layout):
+> - `sounds_path` → the **absolute** path of the public sounds dir, e.g. `/home/<user>/websites/owl-it/familiada/assets/sounds` (uploads must land under the web root to be playable).
+> - `sounds_url_base` → the URL path matching where the board is served, e.g. `/familiada/assets/sounds` (not just `/assets/sounds`, or cues 404 when the app is under a subfolder).
 
 ### Hiding it behind an existing site (no visible link)
 If Familiada rides along on a site that already exists for other purposes:

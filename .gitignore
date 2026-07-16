@@ -1,6 +1,10 @@
 # Secrets / local config
 config.php
 
+# Per-deployment private-code path pointer (written by deploy/sync.py on the
+# public target; see public/paths.php). Machine/host-specific, never committed.
+public/private_path.local.php
+
 # Dependencies
 /vendor/
 /node_modules/
