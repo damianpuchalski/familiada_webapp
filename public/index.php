@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require_once __DIR__ . '/../../src/lib/config.php';
+require_once __DIR__ . '/../src/lib/config.php';
 $cfg = familiada_config();
 $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
 ?>
@@ -10,8 +10,8 @@ $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plansza — Familiada</title>
-<link rel="stylesheet" href="../assets/css/tokens.css">
-<link rel="stylesheet" href="../assets/css/board.css">
+<link rel="stylesheet" href="assets/css/tokens.css">
+<link rel="stylesheet" href="assets/css/board.css">
 </head>
 <body class="board">
 <div class="board-stage" id="stage" data-poll-ms="<?= $pollMs ?>">
@@ -23,8 +23,8 @@ $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
   </div>
 </div>
 
-<script src="../assets/js/api.js"></script>
-<script src="../assets/js/sound.js"></script>
-<script src="../assets/js/board.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/sound.js"></script>
+<script src="assets/js/board.js"></script>
 </body>
 </html>

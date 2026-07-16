@@ -97,7 +97,7 @@
 
   async function poll() {
     try {
-      const state = await Api.getJson('../api/state.php');
+      const state = await Api.getJson('api/state.php');
       SoundCues.detectAndPlay(prevState, state);
       render(state);
       prevState = state;

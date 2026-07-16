@@ -11,7 +11,7 @@ board and Prezenter play these back as plain `<audio src>` URLs. Anything outsid
 `public/` is unreachable over HTTP once the docroot points at `public/` (Spec §9).
 Configurable via `config.php`'s `sounds_path` (disk dir) / `sounds_url_base` (URL
 prefix, default `/assets/sounds`, always emitted as an absolute path so it resolves
-the same from `/board/` and `/admin/`).
+the same from the board root (`/`) and `/admin/`).
 
 ```
 public/assets/sounds/

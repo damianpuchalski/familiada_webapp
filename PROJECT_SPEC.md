@@ -66,7 +66,7 @@ The cPanel account *can* also deploy Django/Node/Rails (which would unlock a per
 └─────────────────┘
 ```
 
-- **`public/board/`** — Plansza + Grand Finale board. Read-only, polls state.
+- **`public/`** (root, `index.php`) — Plansza + Grand Finale board. Read-only, polls state.
 - **`public/admin/`** — Prezenter cockpit, Administrator (games + sounds), Grand Finale admin panel, and the game editor.
 - **`public/api/`** — thin endpoints:
   - `state.php` — returns current board state as JSON (the poll target). **Also returns the server timestamp** (needed for the finale clock).
@@ -322,9 +322,9 @@ Cues fire on **state transitions** (e.g. play buzzer once when the strike count 
 
 **Before committing to a host, verify:** PHP ≥ 8.1 (cPanel → Select PHP Version); frequent AJAX polling allowed (no `mod_security` rule blocking repeated same-URL requests — if it does, whitelist the endpoint or slow the poll to ~1.5 s); a MySQL database can be created.
 
-**Install:** create the DB + user; import `db/schema.sql` (phpMyAdmin → Import); copy `config.example.php` → `config.php` and fill DB creds **and the hashed host password** (do not commit `config.php`); point the domain/subdomain docroot at `public/` — if you can't change docroot, put `public/`'s contents in `public_html/` and keep `src/`, `db/`, `config.php` **outside** the web root (or deny access via `.htaccess`); upload sound files.
+**Install:** create the DB + user; import `db/schema.sql` (phpMyAdmin → Import); copy `config.example.php` → `config.php` and fill DB creds **and the hashed host password** (do not commit `config.php`); point the domain/subdomain docroot at `public/` — if you can't change docroot, put `public/`'s contents at the desired public path (e.g. an unlinked subfolder like `/familiada`) and keep `src/`, `db/`, `config.php` in a **separate, non-web-reachable location** (a sibling folder outside every site's docroot, not just an `.htaccess`-denied subfolder of one — see `docs/DEPLOYMENT.md`); upload sound files.
 
-**Game day, two screens:** host opens `public/admin/` on their laptop; the board opens `public/board/` full-screen on the machine driving the TV/projector. Both reach the same server; the board follows whatever game is set "live".
+**Game day, two screens:** host opens `public/admin/` (e.g. `/familiada/admin`) on their laptop; the board opens `public/` root (e.g. `/familiada`) full-screen on the machine driving the TV/projector. Both reach the same server; the board follows whatever game is set "live".
 
 **Security:** keep `config.php`, `src/`, `db/` out of the web root; the login gate (see §7) protects the cockpit. Serve over HTTPS.
 

@@ -43,7 +43,7 @@ Why polling and not the alternatives:
 ```
 
 - **Admin Cockpit** (`public/admin/`) — dense control panel. Sees the full answer list with points, reveals answers, drives strikes/steal, selects team, finishes rounds, controls the finale timer and sounds.
-- **Contestant Board** (`public/board/`) — theatrical big screen. Shows answer slots (hidden → revealed), round total, strikes, current team, finale timer. Read-only, polls state.
+- **Contestant Board** (`public/`, root `index.php`) — theatrical big screen. Shows answer slots (hidden → revealed), round total, strikes, current team, finale timer. Read-only, polls state.
 - **API** (`public/api/`) — thin endpoints:
   - `state.php` — returns current board state as JSON (the poll target). Also returns the **server timestamp** (needed for the finale clock).
   - `action.php` — receives admin actions (reveal answer, strike, pass turn, finish round, set team, timer control, set-live, etc.), validates them against the state machine, updates `game_state`.

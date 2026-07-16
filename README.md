@@ -54,11 +54,11 @@ familiada/
 │  ├─ lib/                 ← db connection, helpers
 │  └─ game/                ← game logic (state machine, scoring)
 ├─ public/                 ← web root (point your domain / subdomain here)
+│  ├─ index.php            ← contestant big-screen board (Plansza), at the root
 │  ├─ admin/               ← admin cockpit + editor + history views
-│  ├─ board/               ← contestant big-screen views
-│  └─ api/                 ← polling + action endpoints (state.php etc.)
-├─ assets/
-│  └─ sounds/              ← sound cues (buzzer, ding, etc.)
+│  ├─ api/                 ← polling + action endpoints (state.php etc.)
+│  └─ assets/
+│     └─ sounds/           ← sound cues (must live under public/ — the web root)
 ├─ config.example.php      ← copy to config.php and fill in DB creds
 └─ .gitignore
 ```

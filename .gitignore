@@ -17,6 +17,8 @@ Thumbs.db
 *.log
 /tmp/
 
+deploy.local.env
+
 # Uploaded sound files (keep the folder, ignore large audio) — served from under
 # public/ since the webroot is public/ (Spec §9); starter/seeded packs are tracked
 # explicitly below despite the pattern.
