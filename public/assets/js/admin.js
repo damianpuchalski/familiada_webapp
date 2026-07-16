@@ -341,6 +341,13 @@
     }));
     root.querySelectorAll('[data-upload-cue]').forEach((input) => input.addEventListener('change', async () => {
       if (!input.files[0]) return;
+      // Mirror of SoundLibrary::MAX_UPLOAD_BYTES (8 MB) — friendlier than a round-trip.
+      const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+      if (input.files[0].size > MAX_UPLOAD_BYTES) {
+        alert('Plik jest za duży (maks. 8 MB).');
+        input.value = '';
+        return;
+      }
       const fd = new FormData();
       fd.append('action', 'upload');
       fd.append('sound_set_id', state.soundsPackId);

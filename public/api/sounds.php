@@ -40,7 +40,11 @@ json_guard(function (): void {
         if ($setId === null || $cue === null) {
             json_error('Missing or invalid sound_set_id/cue', 400);
         }
-        if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        $uploadErr = $_FILES['file']['error'] ?? UPLOAD_ERR_NO_FILE;
+        if (!isset($_FILES['file']) || $uploadErr !== UPLOAD_ERR_OK) {
+            if ($uploadErr === UPLOAD_ERR_INI_SIZE || $uploadErr === UPLOAD_ERR_FORM_SIZE) {
+                json_error('File too large for the server (exceeds PHP upload_max_filesize).', 400);
+            }
             json_error('No file uploaded', 400);
         }
         $file = $_FILES['file'];

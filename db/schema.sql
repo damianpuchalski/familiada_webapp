@@ -78,7 +78,7 @@ INSERT INTO sounds (sound_set_id, cue, file_path) VALUES
   (1, 'end_game',     'klasyczny/end_game.wav');
 
 -- ---------------------------------------------------------------------------
--- Games + frozen content copy
+-- Games + per-game content (frozen by status: mutable while draft, read-only once started)
 -- ---------------------------------------------------------------------------
 CREATE TABLE games (
   id            INT UNSIGNED NOT NULL AUTO_INCREMENT,

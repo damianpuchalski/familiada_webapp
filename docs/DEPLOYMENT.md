@@ -24,7 +24,7 @@ This app is built to run on standard cPanel shared hosting with plain PHP + MySQ
 6. Load the admin cockpit, design a game, set it live, open the board on the TV/projector browser.
 
 ### Automated sync (`deploy/sync.py`)
-Steps 2, 4, and 5 (upload files, import schema) are automated by `deploy/sync.py`, which pushes the repo to both targets over one FTP login and imports the schema over SSH. It reads credentials/paths from `deploy.local.env` (gitignored) and uploads **only git-tracked files** (plus `config.php`, which is gitignored but pushed to the private target only).
+Steps 2, 4, and 5 (upload files, import schema) are automated by `deploy/sync.py`, which pushes the repo to both targets over one FTP login and imports the schema over SSH. It reads credentials/paths from `deploy.local.env` (gitignored) and uploads **only git-tracked files**. `config.php` is **not** synced — it is environment-specific (the local copy holds dev credentials), so place/update the server's `config.php` on the private target by hand, once. The script also writes the private-path anchor (see below).
 
 ```bash
 python deploy/sync.py --files            # dry-run: print the full public/private upload plan

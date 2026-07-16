@@ -1,0 +1,33 @@
+# Familiada — public-root hardening (defense-in-depth).
+#
+# The real protections are the outside-webroot private split (config.php and
+# src/ are NOT under this directory) and the cockpit login gate. These rules
+# just close obvious direct-fetch avenues and set baseline headers.
+
+# --- Force HTTPS ------------------------------------------------------------
+# Self-contained (does not rely on the parent docroot's rewrite rules being
+# inherited into this subdirectory).
+RewriteEngine On
+RewriteCond %{HTTPS} off
+RewriteCond %{HTTP:X-Forwarded-Proto} !https
+RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# --- No directory listings --------------------------------------------------
+Options -Indexes
+
+# --- Baseline security headers ---------------------------------------------
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# --- Block direct HTTP access to non-servable files -------------------------
+# Includes (_bootstrap.php, _header.php), the private-path pointer, docs, and
+# any stray .sql/.example.php. PHP's own require() reads these from disk, which
+# .htaccess does not affect — this only blocks fetching them over HTTP.
+<IfModule mod_authz_core.c>
+    <FilesMatch "(^\.|^_|\.(md|sql|local\.php|example\.php)$)">
+        Require all denied
+    </FilesMatch>
+</IfModule>

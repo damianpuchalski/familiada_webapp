@@ -77,13 +77,10 @@ def build_manifest(env: dict) -> list[tuple[str, str]]:
         for f in git_tracked(top):
             manifest.append((f, f"{priv}/{f}"))
 
-    # config.php: gitignored, pushed to PRIVATE only.
-    if (REPO / "config.php").is_file():
-        manifest.append(("config.php", f"{priv}/config.php"))
-    else:
-        print("WARNING: config.php not found locally — the private target will "
-              "have no DB credentials. Create it from config.example.php first.",
-              file=sys.stderr)
+    # NOTE: config.php is deliberately NOT synced. It is environment-specific
+    # (the local copy holds dev/test credentials) and lives only on each target.
+    # Auto-pushing the local one would clobber the server's production config.
+    # Place/update the server config.php on the private target by hand (once).
 
     return manifest
 
@@ -148,6 +145,7 @@ def sync_files(env: dict, apply: bool) -> None:
     mode = "APPLY" if apply else "DRY-RUN"
     print(f"\n=== File sync ({mode}) — {len(manifest)} files ===")
 
+    print("  (config.php is NOT synced — manage it by hand per environment)")
     if not apply:
         for local, remote in manifest:
             print(f"  {local}  ->  {remote}")

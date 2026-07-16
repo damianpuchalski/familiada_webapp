@@ -25,6 +25,15 @@ final class SoundLibrary
 {
     public const CUES = ['correct', 'strike', 'round_start', 'reveal', 'finale_timer', 'end_game'];
 
+    /**
+     * Max accepted size for a single uploaded cue file, in bytes. Cues are short
+     * sound effects, so 8 MB is generous. Server-side is the source of truth; the
+     * client mirrors this number for a friendlier pre-upload check (admin.js).
+     * Note: PHP's own upload_max_filesize/post_max_size can reject even sooner —
+     * the endpoint reports that case separately.
+     */
+    public const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+
     /** Absolute filesystem directory that per-pack sound folders live under. */
     public static function baseDir(): string
     {
@@ -107,6 +116,15 @@ final class SoundLibrary
         $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
         if (!in_array($ext, ['wav', 'mp3', 'ogg'], true)) {
             throw new RuntimeException('Unsupported audio format (use wav, mp3 or ogg)');
+        }
+
+        $size = @filesize($tmpPath);
+        if ($size === false || $size <= 0) {
+            throw new RuntimeException('Empty or unreadable upload');
+        }
+        if ($size > self::MAX_UPLOAD_BYTES) {
+            $mb = (int) (self::MAX_UPLOAD_BYTES / (1024 * 1024));
+            throw new RuntimeException("File too large (max {$mb} MB)");
         }
 
         $stmt = $pdo->prepare('SELECT name FROM sound_sets WHERE id = ?');

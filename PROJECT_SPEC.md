@@ -227,6 +227,8 @@ Two top-level tabs — **Gry** (Games) and **Dźwięki** (Sounds). Tabs hide whi
 
 **Game editor** (from "+ Nowa gra" or "Edytuj") — a 4-column header: game name (input), mode toggle (Klasyczny/300 vs. Wolne rundy), a finale on/off toggle **rendered disabled with a "Wkrótce (V2)" hint** (finale is deferred — §4.5), and **sound-set picker** (Klasyczny / Retro / Filmowy) — **the only place a game's sound set is chosen**. Below: repeatable question blocks, each with a question-text input, "Usuń pytanie" (remove), and **up to 8 answer rows** (text + points + remove ×), plus "+ odpowiedź" and, below all questions, "+ Dodaj pytanie". Footer: "Zapisz grę" (save, green) / "Odrzuć zmiany" (discard).
 
+These question/answer blocks are authored **directly on the game** — the editor writes `game_question_sets`/`game_questions`/`game_answers`, not the library. Saving is only permitted while the game is a `draft`; the server (`GameContent::saveGame`) rejects edits to any started game, which is how content is frozen (see §6, §6.1). The reusable library is an **optional** starting point, not a requirement: `GameContent::importLibrarySet` can seed a draft game's rounds by copying a saved library set's questions/answers in as new rounds, after which the copy is independent of the library. There is no "run this game straight from a library set" path — a game always plays from its own `game_*` content.
+
 **Dźwięki tab** — real per-pack sound-file management (replaces the old non-functional cockpit selector). Sub-tabs pick the pack being edited (**Klasyczny / Retro / Filmowy** — same three names as the editor picker; **must stay in sync**). For the selected pack, one row per cue slot (Poprawna odpowiedź, Strike/Buzzer, Start rundy, Odkrycie odpowiedzi, Zegar finału, Koniec gry) showing either "Brak przypisanego pliku — odtwarzany będzie dźwięk domyślny" or the uploaded filename, with **▶ Odsłuchaj** (play) and **Usuń** (remove) once a file exists, plus a **Wybierz plik / Zamień plik** upload button (`<input type="file" accept="audio/*">`) always present. The real build needs **actual server-side storage** (upload + persisted path per pack+cue) so an assigned sound survives reload and is retrievable both by the automatic cue player and by Prezenter's manual overrides.
 
 ### 5.5 Grand Finale screens — V2 (not in V1)
@@ -244,9 +246,9 @@ Both still need design work (the handoff never delivered them). Do not build the
 
 Three groups of tables. Full DDL in `db/schema.sql` (InnoDB, utf8mb4). Architect owns schema changes; keep schema and this section in sync.
 
-**Content library (reusable, freely editable):** `lib_question_sets`, `lib_questions`, `lib_answers` (text + points + sort_order). Editing the library never affects games already started.
+**Content library (reusable, freely editable):** `lib_question_sets`, `lib_questions`, `lib_answers` (text + points + sort_order). A game never reads the library at play time — its content lives in its own `game_*` tables (optionally seeded from the library via import, below), so editing the library never affects any game, started or not.
 
-**Games + frozen content copy:** `games` (name, mode `classic_300`|`free_rounds`, grand_finale bool, sound_set_id, status, timestamps), `game_question_sets` (round_number, multiplier, name), `game_questions`, `game_answers` (text, points, sort_order, `revealed`). **Frozen-copy decision:** when a game *starts*, the chosen library sets are copied into the `game_*` tables; from then on the game reads only its own frozen copy, which becomes read-only once `in_progress`/`finished`. This keeps history truthful — editing the library later must not rewrite the past.
+**Games + per-game content (frozen by status):** `games` (name, mode `classic_300`|`free_rounds`, grand_finale bool, sound_set_id, status, timestamps), `game_question_sets` (round_number, multiplier, name), `game_questions`, `game_answers` (text, points, sort_order, `revealed`). **Freeze-by-status decision (RESOLVED — see §10, change 9):** a game's questions/answers are authored **directly** in the `game_*` tables by the Administrator game editor while the game is a `draft`. There is **no library-copy step at start**; the content becomes read-only the moment the game leaves `draft` (i.e. once started). The "freeze" is enforced by **status, server-side**, not by a copy — `GameContent::saveGame`/`deleteGame`/`importLibrarySet` reject any game whose status is not `draft`. This keeps history truthful: a started game's content can never change. The reusable library stays useful through an **optional** "import from library" convenience (`GameContent::importLibrarySet`) that copies a library set's questions/answers into a *draft* game as new rounds; after import the game's copy is fully independent of the library.
 
 **Teams:** `teams` — two rows per game (`blue`, `red`), running `score`, unique on (game_id, color).
 
@@ -268,19 +270,19 @@ Three groups of tables. Full DDL in `db/schema.sql` (InnoDB, utf8mb4). Architect
 
 | Status | Polish label | Meaning | Editable? | Live-able? |
 |--------|--------------|---------|-----------|-----------|
-| `draft` | SZKIC | Being created/edited; **never started**. Library content, not yet frozen. | Yes, fully | Yes → becomes `live`/`in_progress` on first start |
+| `draft` | SZKIC | Being created/edited; **never started**. Content authored directly on the game (`game_*` tables); mutable, not yet frozen. | Yes, fully | Yes → becomes `live`/`in_progress` on first start |
 | `live` | LIVE | The one game currently pointed to by `active_game` — the board shows it. **Exactly one at a time.** Overlays an `in_progress` game (a just-started `draft` becomes live+in_progress). | No | It already is |
 | `in_progress` | W TRAKCIE | **Started but not finished.** Frozen content exists, play state is in `game_state`. May be currently live, or **held** (not live) while another game is live. | No (frozen, read-only) | Yes → resume as live |
 | `finished` | ZAKOŃCZONA | Completed. Read-only summary with final scores. | No | Not normally; can be **restarted** (below) |
 | `archived` | ARCHIWALNA | Hidden from the main list. | No | No |
 | `paused` | — | Optional internal marker for an explicitly paused game; treated like `in_progress` for hold/resume. Not surfaced as a distinct action in V1. | No | Yes |
 
-**Starting a game (set a `draft` live).** Freeze the chosen library sets into the `game_*` tables, create the two `teams` rows (score 0), initialise the `game_state` row, point `active_game` at it, and set status to `live` (it is now also conceptually `in_progress` — started and unfinished).
+**Starting a game (set a `draft` live).** The game already carries its own `game_*` content (authored in the editor while `draft`), so starting **copies nothing** — it simply **freezes that content by status** as the game leaves `draft`, after which the content is read-only. On start: create the two `teams` rows (score 0), initialise the `game_state` row, point `active_game` at it, and set status to `live` (it is now also conceptually `in_progress` — started and unfinished).
 
 **Hold & resume (the core of Decision 5).** Only **one** game is `live` at a time. When the host sets a **different** game live:
 
 - The previously-live game — which by definition had already started — is **demoted to `in_progress`** (held), **not** to `draft`. Its frozen content, scores, and `game_state` are preserved untouched.
-- The newly-selected game becomes `live`. If it was a `draft`, it starts fresh (freeze + init as above); if it was `in_progress`, it simply **resumes** — its saved `game_state` re-renders the game exactly where it left off.
+- The newly-selected game becomes `live`. If it was a `draft`, it starts fresh (freeze-by-status + init as above); if it was `in_progress`, it simply **resumes** — its saved `game_state` re-renders the game exactly where it left off.
 - All of this happens in **one transaction** (flip `active_game` + demote the old live game + promote the new one).
 
 So a host can hold game A (→ in_progress), run game B, then later set game A live again and continue it. A `draft` is only ever "creation in progress"; a started game never falls back to `draft` via hold.
@@ -349,6 +351,8 @@ Where the original `docs/` spec and the Claude Design handoff diverged, this is 
 **7 — Answer counts.** *Design:* the editor allows **up to 8** answers per question; the board/cockpit render **6** rows in the mock. **Decision:** author up to 8; the board renders however many the question has (commonly ≤6). No schema change needed.
 
 **8 — `paused` status retained.** The design's status list doesn't surface `paused`, but the schema includes it and it is useful for resume. **Decision:** keep `draft`/`live`/`in_progress`/`paused`/`finished`/`archived` in the data model; surface Polish labels for the ones the UI shows.
+
+**9 — Content freeze is by status, not by a library-copy at start — RESOLVED.** *Original data-model wording:* a game froze a **chosen library set** by *copying* it into the `game_*` tables when it *started*. *Design handoff / editor UI:* the game editor authors question/answer blocks **directly on the game**, with no "pick a library set" control. These read as contradictory. **Decision (confirmed, shipped in V1):** the game editor writes `game_*` content **directly** while the game is a `draft`; the "freeze" is enforced by **status** (content goes read-only the moment the game leaves `draft`), **server-side** — `GameContent::saveGame`/`deleteGame`/`importLibrarySet` reject non-`draft` games. Starting a game copies **nothing**. The reusable library stays meaningful via an **optional** import convenience (`GameContent::importLibrarySet`) that copies a library set into a draft game as new rounds. This keeps history truthful (a started game's content can never change) without contradicting the editor UI. Verified by the tester; no bug results. (§5.4, §6, §6.1)
 
 ### Resolutions & remaining build items
 
