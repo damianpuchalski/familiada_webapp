@@ -190,11 +190,14 @@ final class GameContent
                 )->execute([$name, $mode, $soundSetId]);
                 $gameId = (int) $pdo->lastInsertId();
             } else {
-                $game = $pdo->prepare('SELECT status FROM games WHERE id = ? FOR UPDATE');
+                // A game can be edited at any status. Editing only rewrites content
+                // (name/mode/sound/questions); it never touches status or game_state,
+                // so a live or in-progress game keeps running until the admin chooses
+                // "Zagraj od nowa" to reset it.
+                $game = $pdo->prepare('SELECT id FROM games WHERE id = ? FOR UPDATE');
                 $game->execute([$gameId]);
-                $row = $game->fetch();
-                if (!$row || $row['status'] !== 'draft') {
-                    throw new RuntimeException('Only draft games can be edited');
+                if (!$game->fetch()) {
+                    throw new RuntimeException('Game not found');
                 }
                 $pdo->prepare('UPDATE games SET name = ?, mode = ?, sound_set_id = ?, grand_finale = 0 WHERE id = ?')
                     ->execute([$name, $mode, $soundSetId, $gameId]);
@@ -246,12 +249,9 @@ final class GameContent
 
     public static function deleteGame(PDO $pdo, int $gameId): void
     {
-        $stmt = $pdo->prepare('SELECT status FROM games WHERE id = ?');
-        $stmt->execute([$gameId]);
-        $row = $stmt->fetch();
-        if (!$row || $row['status'] !== 'draft') {
-            throw new RuntimeException('Only draft games can be deleted');
-        }
+        // A game can be deleted at any status. The active_game pointer clears itself
+        // via its FK (ON DELETE SET NULL); question sets / round_results / finale_answers
+        // cascade on delete. Hard-delete the row.
         $pdo->prepare('DELETE FROM games WHERE id = ?')->execute([$gameId]);
     }
 

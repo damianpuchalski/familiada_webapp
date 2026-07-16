@@ -61,10 +61,9 @@
     const rows = state.games.map((g) => {
       const status = g.is_live ? 'live' : g.status;
       const actions = [];
-      if (g.status === 'draft') {
-        actions.push(`<button data-action="edit" data-id="${g.id}">Edytuj</button>`);
-        actions.push(`<button data-action="delete" data-id="${g.id}">Usuń</button>`);
-      }
+      // A game can be edited or deleted at any status. Editing never resets a running
+      // game — use "Zagraj od nowa" for that.
+      actions.push(`<button data-action="edit" data-id="${g.id}">Edytuj</button>`);
       if ((g.status === 'in_progress' || g.status === 'paused') && !g.is_live) {
         actions.push(`<button data-action="resume" data-id="${g.id}">Wznów</button>`);
       }
@@ -74,6 +73,7 @@
       if (['in_progress', 'paused', 'finished', 'live'].includes(g.status)) {
         actions.push(`<button data-action="restart" data-id="${g.id}">Zagraj od nowa</button>`);
       }
+      actions.push(`<button class="btn-danger" data-action="delete" data-id="${g.id}">Usuń</button>`);
       return `<div class="game-row">
         <span class="status-dot ${status}"></span>
         <div>
@@ -111,7 +111,7 @@
         return;
       }
       if (action === 'delete') {
-        if (!confirm('Usunąć tę grę (szkic)?')) return;
+        if (!confirm('Usunąć tę grę na stałe? Tej operacji nie można cofnąć.')) return;
         await Api.postJson('../api/games.php', { action: 'delete', id });
       }
       if (action === 'resume' || action === 'set_live') {
