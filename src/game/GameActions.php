@@ -168,6 +168,14 @@ final class GameActions
             $state = self::fetchGameState($pdo, $gameId, true);
             self::assertPhase($state, ['round', 'steal']);
 
+            // Require a starting team before revealing in a normal round: otherwise 3 reveals
+            // lock setTeam() (Spec §4.3) and finishRound()/endGameByHost() can never bank the
+            // pot ("No starting team set"), dead-ending the round. Steal phase is unaffected —
+            // by then a team was already chosen and the steal target is set.
+            if ($state['phase'] === 'round' && empty($state['starting_team'])) {
+                throw new RuntimeException('Select a starting team before revealing answers.');
+            }
+
             $answer = self::fetchAnswerForUpdate($pdo, $answerId);
             if (!$answer) {
                 throw new RuntimeException('Answer not found');
