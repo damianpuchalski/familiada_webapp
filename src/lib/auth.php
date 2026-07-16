@@ -20,6 +20,7 @@ function auth_start_session(): void
     session_set_cookie_params([
         'lifetime' => $lifetime,
         'path'     => '/',
+        'secure'   => true, // HTTPS-only deployment — never send the session cookie over plain HTTP.
         'httponly' => true,
         'samesite' => 'Lax',
     ]);
