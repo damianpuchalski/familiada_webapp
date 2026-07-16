@@ -1,5 +1,7 @@
-# Secrets / local config
-config.php
+# Secrets / local config — ONLY the repo-root config.php (real credentials).
+# Leading slash anchors it to root so it does NOT also ignore src/lib/config.php
+# (the config LOADER, which is source code with no secrets).
+/config.php
 
 # Per-deployment private-code path pointer (written by deploy/sync.py on the
 # public target; see public/paths.php). Machine/host-specific, never committed.
