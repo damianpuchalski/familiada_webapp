@@ -218,18 +218,20 @@ final class GameContent
                         ->execute([$gameSetId, $text, $qi]);
                     $questionId = (int) $pdo->lastInsertId();
 
-                    foreach (($q['answers'] ?? []) as $ai => $a) {
+                    $inserted = 0;
+                    foreach (($q['answers'] ?? []) as $a) {
+                        if ($inserted >= 8) {
+                            break; // Spec §5.4: up to 8 *non-empty* answers per question.
+                        }
                         $aText = (string) ($a['text'] ?? '');
                         if (trim($aText) === '') {
-                            continue;
-                        }
-                        if ($ai >= 8) {
-                            break; // Spec §5.4: up to 8 answers per question.
+                            continue; // Skip blanks without consuming a slot.
                         }
                         $points = (int) ($a['points'] ?? 0);
                         $pdo->prepare(
                             'INSERT INTO game_answers (game_question_id, text, points, sort_order) VALUES (?, ?, ?, ?)'
-                        )->execute([$questionId, $aText, $points, $ai]);
+                        )->execute([$questionId, $aText, $points, $inserted]);
+                        $inserted++;
                     }
                 }
             }
@@ -284,13 +286,15 @@ final class GameContent
                     ->execute([$gameSetId, $q['text']]);
                 $questionId = (int) $pdo->lastInsertId();
 
-                foreach ($q['answers'] as $ai => $a) {
-                    if ($ai >= 8) {
-                        break;
+                $inserted = 0;
+                foreach ($q['answers'] as $a) {
+                    if ($inserted >= 8) {
+                        break; // Spec §5.4: up to 8 answers per question.
                     }
                     $pdo->prepare(
                         'INSERT INTO game_answers (game_question_id, text, points, sort_order) VALUES (?, ?, ?, ?)'
-                    )->execute([$questionId, $a['text'], $a['points'], $ai]);
+                    )->execute([$questionId, $a['text'], $a['points'], $inserted]);
+                    $inserted++;
                 }
 
                 $nextRound++;
