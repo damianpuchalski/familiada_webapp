@@ -20,7 +20,14 @@ final class GameActions
     // Read: full board/cockpit state
     // ---------------------------------------------------------------
 
-    public static function getBoardState(PDO $pdo, int $gameId): array
+    /**
+     * @param bool $redactHidden When true, unrevealed answers have their text/points
+     *   stripped (text: '', points: 0) so the unauthenticated public board (state.php)
+     *   cannot read hidden answers/points mid-game. The authenticated cockpit passes
+     *   false to get the full data it needs to run the round. The question text is
+     *   always public (Spec §3.2). Default true = safe-by-default for any new caller.
+     */
+    public static function getBoardState(PDO $pdo, int $gameId, bool $redactHidden = true): array
     {
         $game = self::fetchGame($pdo, $gameId);
         if (!$game) {
@@ -106,12 +113,16 @@ final class GameActions
             'round_pot'          => $state ? (int) $state['round_pot'] : 0,
             'team_select_locked' => GameRules::isTeamSelectLocked($revealedCount),
             'question'           => $question ? ['id' => (int) $question['id'], 'text' => $question['text']] : null,
-            'answers'            => array_map(static function (array $a): array {
+            'answers'            => array_map(static function (array $a) use ($redactHidden): array {
+                $revealed = (int) $a['revealed'] === 1;
+                // Redact text/points of still-hidden answers for unauthenticated callers so
+                // the public board can't scrape them ahead of the reveal (Spec §3.2, §7).
+                $hide = $redactHidden && !$revealed;
                 return [
                     'id'       => (int) $a['id'],
-                    'text'     => $a['text'],
-                    'points'   => (int) $a['points'],
-                    'revealed' => (bool) $a['revealed'],
+                    'text'     => $hide ? '' : $a['text'],
+                    'points'   => $hide ? 0 : (int) $a['points'],
+                    'revealed' => $revealed,
                     'sort_order' => (int) $a['sort_order'],
                 ];
             }, $answers),

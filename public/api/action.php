@@ -66,5 +66,6 @@ json_guard(function (): void {
             json_error("Unknown action '{$action}'", 400);
     }
 
-    json_ok(GameActions::getBoardState($pdo, $gameId));
+    // Authenticated cockpit: full data (no redaction) so the host sees hidden answers.
+    json_ok(GameActions::getBoardState($pdo, $gameId, false));
 });

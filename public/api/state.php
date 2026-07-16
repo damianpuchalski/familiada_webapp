@@ -24,6 +24,8 @@ json_guard(function (): void {
         $gameId = (int) $gameId;
     }
 
-    $state = GameActions::getBoardState($pdo, $gameId);
+    // Public board is unauthenticated: redact hidden answers. The prezenter polls the
+    // same endpoint while logged in and gets the full data.
+    $state = GameActions::getBoardState($pdo, $gameId, !auth_is_logged_in());
     json_ok($state);
 });
