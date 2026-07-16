@@ -24,8 +24,16 @@ return [
     // Session lifetime in seconds before the host must log in again (0 = until browser closes).
     'session_lifetime' => 0,
 
-    // Base path/URL where uploaded sound files live (per-pack subfolders under here).
-    'sounds_path' => __DIR__ . '/assets/sounds',
+    // Where uploaded/seeded sound files live on disk (per-pack subfolders under here:
+    // default/, klasyczny/, retro/, filmowy/). MUST be under public/ (the web root,
+    // per §9) — board/Prezenter play these back as plain <audio src> URLs, so
+    // anything outside public/ is unreachable over HTTP. See public/assets/sounds/README.md.
+    'sounds_path' => __DIR__ . '/public/assets/sounds',
+
+    // The browser-facing URL prefix that corresponds to 'sounds_path' above.
+    // Emitted as an absolute (leading-slash) URL so it resolves the same from
+    // /board/ and /admin/ regardless of nesting — never a relative "../" path.
+    'sounds_url_base' => '/assets/sounds',
 
     // Set true only while developing locally.
     'debug' => false,

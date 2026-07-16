@@ -59,8 +59,10 @@ familiada/
 ├─ public/                  ← web root
 │  ├─ board/                ← Plansza (Grand Finale board = V2)
 │  ├─ admin/                ← Prezenter, Administrator, editor, login (finale admin = V2)
-│  └─ api/                  ← state.php, action.php, auth, CRUD, sound upload
-└─ assets/sounds/           ← default/ + klasyczny|retro|filmowy packs (starter WAVs shipped)
+│  ├─ api/                  ← state.php, action.php, auth, CRUD, sound upload
+│  └─ assets/sounds/        ← default/ + klasyczny|retro|filmowy packs (starter WAVs shipped).
+│                              MUST live under public/ (the web root) — anything outside it
+│                              404s once the docroot points at public/ (Spec §9).
 ```
 
 ## 5. Using the design reference
@@ -81,7 +83,7 @@ Extract shared tokens (color/type/spacing) into **one stylesheet** and build bot
 Setup scaffolding is already in place; wire it up:
 
 1. **Auth:** `config.example.php` now has `auth_password_hash` + `session_lifetime`. Build the PHP-session **verify/logout endpoints** and **route guards** that read them; replace the design's client-side password mock. Guard all `admin/` routes; leave `board/` public. (Spec §7)
-2. **Sound packs:** the three packs (Klasyczny / Retro / Filmowy) and the Klasyczny cue rows are **already seeded** in `db/schema.sql`, and starter WAVs ship under `assets/sounds/`. Build the upload/list/delete endpoints and the default-fallback player on top. (Spec §6, §8)
+2. **Sound packs:** the three packs (Klasyczny / Retro / Filmowy) and the Klasyczny cue rows are **already seeded** in `db/schema.sql`, and starter WAVs ship under `public/assets/sounds/`. Build the upload/list/delete endpoints and the default-fallback player on top. (Spec §6, §8)
 3. **Finale off:** ensure the editor's finale toggle is rendered **disabled** ("Wkrótce (V2)") and `games.grand_finale` stays `0`; never enter the `finale` phase. (Spec §4.5)
 
 ## 7. Build order
@@ -109,7 +111,7 @@ Follow this sequence; each step is a natural handoff to the tester.
 - **Hold ≠ draft.** Setting another game live demotes the previously-live game to **`in_progress`** (held, resumable), never `draft`. `draft` = creation-in-progress only. (Spec §6.1)
 - **Restart keeps questions, wipes play state** — reset scores/reveals/round_results/game_state, keep the frozen `game_*` content; status → `in_progress`. Confirm-gate it. (Spec §6.1)
 - **Exactly one game is live** at a time (`active_game` pointer + transactional demotion — do the pointer flip and the demotion in one transaction).
-- **Sound-set is chosen in the editor**, displayed read-only in Prezenter. Missing pack file → fall back to `assets/sounds/default/<cue>.wav`.
+- **Sound-set is chosen in the editor**, displayed read-only in Prezenter. Missing pack file → fall back to `public/assets/sounds/default/<cue>.wav`. Cue URLs are always emitted as absolute (`/assets/sounds/...`) — a relative path breaks depending on whether the page is `/board/` or `/admin/`.
 - **Finale is V2/off:** don't build finale screens; keep `grand_finale = 0` and never enter the `finale` phase. (Timer design is recorded in Spec §4.5 for later.)
 
 ## 9. Working with the agents

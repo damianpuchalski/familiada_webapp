@@ -1,0 +1,204 @@
+/* Plansza — contestant board. The one theatrical "stage" screen. §5.1. */
+
+body.board {
+  min-height: 100vh;
+  margin: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, var(--board-bg-center), var(--board-bg-mid) 55%, var(--board-bg-edge) 100%);
+  color: oklch(0.96 0.01 260);
+  font-family: var(--font-body);
+}
+
+.board-stage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.arc-glow {
+  position: absolute;
+  width: 46vw;
+  height: 46vw;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.arc-glow.red { top: -18vw; left: -18vw; background: var(--color-red); }
+.arc-glow.blue { top: -18vw; right: -18vw; background: var(--color-blue); }
+
+.question-banner {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: clamp(22px, 2.6vw, 34px);
+  text-align: center;
+  max-width: 90vw;
+  margin-bottom: 18px;
+  min-height: 1.4em;
+}
+
+.round-total {
+  font-family: var(--font-led);
+  color: var(--color-amber);
+  background: oklch(0.15 0.02 260 / 0.6);
+  border: 1px solid var(--color-amber-dim);
+  border-radius: var(--radius-pill);
+  padding: 4px 18px;
+  font-size: 15px;
+  margin-bottom: -14px;
+  z-index: 2;
+  letter-spacing: 0.08em;
+}
+.round-total.pulse { animation: glowPulse 0.6s; }
+
+.board-row {
+  display: flex;
+  align-items: stretch;
+  gap: 18px;
+  z-index: 1;
+  width: 100%;
+  max-width: 1400px;
+  justify-content: center;
+}
+
+.score-box {
+  min-width: 140px;
+  background: oklch(0.10 0.02 260 / 0.8);
+  border: 2px solid var(--cockpit-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  gap: 8px;
+}
+.score-box.team-red { border-color: var(--color-red); }
+.score-box.team-blue { border-color: var(--color-blue); }
+.score-box.on-clock.team-red { box-shadow: 0 0 24px oklch(0.60 0.22 18 / 0.55); }
+.score-box.on-clock.team-blue { box-shadow: 0 0 24px oklch(0.62 0.19 250 / 0.55); }
+.score-box .team-label {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.score-box.team-red .team-label { color: var(--color-red); }
+.score-box.team-blue .team-label { color: var(--color-blue); }
+.score-box .team-shape {
+  width: 14px;
+  height: 14px;
+  display: inline-block;
+  margin-right: 6px;
+}
+.score-box.team-red .team-shape { background: var(--color-red); border-radius: 3px; } /* square = red */
+.score-box.team-blue .team-shape { background: var(--color-blue); border-radius: 50%; } /* circle = blue */
+.score-box .score-value {
+  font-family: var(--font-led);
+  font-size: clamp(36px, 5vw, 56px);
+  color: var(--color-amber);
+  text-shadow: 0 0 10px var(--color-amber);
+}
+
+.strikes-col {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+}
+.strike-x {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: oklch(0.3 0.02 260);
+  border: 2px solid oklch(0.3 0.02 260);
+  border-radius: 8px;
+}
+.strike-x.lit {
+  color: var(--color-red);
+  border-color: var(--color-red);
+  background: oklch(0.6 0.22 18 / 0.18);
+  animation: ledIgniteRed 0.6s, shake 0.4s;
+}
+.strike-x.steal-collapsed {
+  width: 56px;
+  height: 96px;
+  font-size: 40px;
+  opacity: 0.5;
+}
+.strike-x.steal-collapsed.lit { opacity: 1; }
+
+.answer-panel {
+  background: repeating-linear-gradient(
+    0deg,
+    oklch(0.08 0.02 260) 0px,
+    oklch(0.08 0.02 260) 2px,
+    oklch(0.10 0.02 260) 2px,
+    oklch(0.10 0.02 260) 4px
+  );
+  border: 1px solid oklch(0.3 0.03 260);
+  border-radius: var(--radius-lg);
+  padding: 20px 28px;
+  width: min(720px, 60vw);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.answer-line {
+  display: grid;
+  grid-template-columns: 34px 1fr 60px;
+  align-items: baseline;
+  gap: 10px;
+  min-height: clamp(30px, 4vh, 44px);
+  font-family: var(--font-led);
+  font-size: clamp(18px, 2vw, 26px);
+  border-bottom: 1px dotted oklch(0.3 0.02 260);
+}
+.answer-line:last-child { border-bottom: none; }
+.answer-line .idx { color: oklch(0.4 0.02 260); }
+.answer-line .txt { color: transparent; letter-spacing: 0.02em; }
+.answer-line .pts { text-align: right; color: transparent; }
+.answer-line.revealed .txt,
+.answer-line.revealed .pts {
+  color: var(--color-amber);
+  text-shadow: 0 0 8px var(--color-amber);
+}
+.answer-line.revealed.just-revealed .txt,
+.answer-line.revealed.just-revealed .pts {
+  animation: ledIgnite 0.6s;
+}
+
+.steal-banner {
+  margin-top: 16px;
+  font-family: var(--font-display);
+  color: var(--color-amber);
+  letter-spacing: 0.1em;
+  font-size: 14px;
+  animation: stealBlink 1.2s infinite;
+}
+
+.lobby-message {
+  font-family: var(--font-display);
+  font-size: 22px;
+  color: var(--cockpit-text-muted);
+  text-align: center;
+}
+
+.game-over-screen {
+  font-family: var(--font-display);
+  text-align: center;
+}
+.game-over-screen .winner {
+  font-size: clamp(30px, 5vw, 56px);
+  margin-top: 12px;
+}
+.game-over-screen .winner.team-blue { color: var(--color-blue); }
+.game-over-screen .winner.team-red { color: var(--color-red); }

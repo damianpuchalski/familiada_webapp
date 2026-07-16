@@ -65,15 +65,17 @@ INSERT INTO sound_sets (id, name) VALUES
   (2, 'Retro'),
   (3, 'Filmowy');
 
--- Starter cue files for the Klasyczny pack (synthesized WAVs shipped in assets/sounds/).
--- Retro and Filmowy have no files yet: they fall back to assets/sounds/default/<cue>.wav.
+-- Starter cue files for the Klasyczny pack (synthesized WAVs shipped under
+-- public/assets/sounds/ — the web root, so playback works over HTTP; see §9).
+-- file_path is relative to config.php's 'sounds_path' (public/assets/sounds by default).
+-- Retro and Filmowy have no files yet: they fall back to default/<cue>.wav.
 INSERT INTO sounds (sound_set_id, cue, file_path) VALUES
-  (1, 'correct',      'assets/sounds/klasyczny/correct.wav'),
-  (1, 'strike',       'assets/sounds/klasyczny/strike.wav'),
-  (1, 'round_start',  'assets/sounds/klasyczny/round_start.wav'),
-  (1, 'reveal',       'assets/sounds/klasyczny/reveal.wav'),
-  (1, 'finale_timer', 'assets/sounds/klasyczny/finale_timer.wav'),
-  (1, 'end_game',     'assets/sounds/klasyczny/end_game.wav');
+  (1, 'correct',      'klasyczny/correct.wav'),
+  (1, 'strike',       'klasyczny/strike.wav'),
+  (1, 'round_start',  'klasyczny/round_start.wav'),
+  (1, 'reveal',       'klasyczny/reveal.wav'),
+  (1, 'finale_timer', 'klasyczny/finale_timer.wav'),
+  (1, 'end_game',     'klasyczny/end_game.wav');
 
 -- ---------------------------------------------------------------------------
 -- Games + frozen content copy

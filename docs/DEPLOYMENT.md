@@ -18,7 +18,7 @@ This app is built to run on standard cPanel shared hosting with plain PHP + MySQ
 2. Import `db/schema.sql` via cPanel → phpMyAdmin (Import tab) or the CLI.
 3. Copy `config.example.php` to `config.php` and fill in DB credentials. **Do not commit `config.php`** (it's gitignored).
 4. Point your domain/subdomain's document root at `public/`. If you cannot change the docroot, put the contents of `public/` in `public_html/` and move `src/`, `db/`, `config.php` **outside** the web root (or protect them with `.htaccess`), so only `public/` is web-accessible.
-5. Upload sound files into `assets/sounds/` (or wherever a sound set points).
+5. Upload sound files into `public/assets/sounds/` (or wherever `config.php`'s `sounds_path` points) — this **must** be under `public/`, since the board/cockpit play them back as `<audio src>` URLs and anything outside the web root 404s.
 6. Load the admin cockpit, design a game, set it live, open the board on the TV/projector browser.
 
 ## Two-screen setup on game day

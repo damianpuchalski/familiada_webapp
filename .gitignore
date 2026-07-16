@@ -17,8 +17,11 @@ Thumbs.db
 *.log
 /tmp/
 
-# Uploaded sound files (keep the folder, ignore large audio)
-assets/sounds/*.mp3
-assets/sounds/*.wav
-assets/sounds/*.ogg
-!assets/sounds/.gitkeep
+# Uploaded sound files (keep the folder, ignore large audio) — served from under
+# public/ since the webroot is public/ (Spec §9); starter/seeded packs are tracked
+# explicitly below despite the pattern.
+public/assets/sounds/**/*.mp3
+public/assets/sounds/**/*.wav
+public/assets/sounds/**/*.ogg
+!public/assets/sounds/default/*.wav
+!public/assets/sounds/klasyczny/*.wav

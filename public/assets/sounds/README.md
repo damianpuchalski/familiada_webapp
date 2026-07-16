@@ -6,8 +6,15 @@ re-triggered manually from Prezenter).
 
 ## Layout
 
+Lives under **`public/assets/sounds/`** — i.e. inside the web root — because the
+board and Prezenter play these back as plain `<audio src>` URLs. Anything outside
+`public/` is unreachable over HTTP once the docroot points at `public/` (Spec §9).
+Configurable via `config.php`'s `sounds_path` (disk dir) / `sounds_url_base` (URL
+prefix, default `/assets/sounds`, always emitted as an absolute path so it resolves
+the same from `/board/` and `/admin/`).
+
 ```
-assets/sounds/
+public/assets/sounds/
 ├─ default/     ← fallback cues, always present. Played when a pack has no file for a cue.
 ├─ klasyczny/   ← "Klasyczny" pack — seeded with starter sounds (same as default).
 ├─ retro/       ← "Retro" pack — empty; falls back to default until files are uploaded.
@@ -29,8 +36,8 @@ assets/sounds/
 
 - The **starter sounds are CSS-free synthesized WAVs** included so the app makes sound out of
   the box. Replace them with production audio any time via Administrator → Dźwięki.
-- The real build stores uploaded files here (or a configured uploads path) and persists the
-  path per pack + cue in the `sounds` table. A cue with no row / missing file falls back to
-  `default/<cue>.wav`.
+- Uploaded files are stored here (`sounds_path`) and the path per pack + cue is persisted in
+  the `sounds` table, relative to `sounds_path` (e.g. `klasyczny/correct.wav`). A cue with no
+  row / missing file falls back to `default/<cue>.wav`.
 - Keep the three pack folder names (`klasyczny`, `retro`, `filmowy`) in sync with the
   `sound_sets.name` rows and the editor's picker.
