@@ -63,14 +63,15 @@ final class GameActions
 
         // Spec §4.4: winner is only meaningful once the game has ended. Computed here (not
         // stored — there's no games.winner column) so board/cockpit never have to re-derive
-        // it client-side; classic_300 already decided this at the moment of finishing, and
-        // free_rounds' tie-aware freeRoundsWinner() is the single source of truth for it.
+        // it client-side. classic_300 uses classicFinalWinner() so a game that runs out of
+        // sets without anyone reaching 300 falls back to highest-score-wins instead of a
+        // false "REMIS"; free_rounds' tie-aware freeRoundsWinner() is its source of truth.
         $winner = null;
         if (($state['phase'] ?? null) === 'finished') {
             $blueScore = (int) ($teams['blue']['score'] ?? 0);
             $redScore = (int) ($teams['red']['score'] ?? 0);
             $winner = $mode === 'classic_300'
-                ? GameRules::classicWinner($blueScore, $redScore)
+                ? GameRules::classicFinalWinner($blueScore, $redScore)
                 : GameRules::freeRoundsWinner($blueScore, $redScore);
         }
 

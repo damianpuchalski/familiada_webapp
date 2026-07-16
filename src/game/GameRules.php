@@ -103,6 +103,27 @@ final class GameRules
         return $blueOver ? 'blue' : 'red';
     }
 
+    /**
+     * Spec §4.4: final winner for a classic_300 game that has ENDED. If a team crossed
+     * 300 the instant-win rule decides it (classicWinner). Otherwise the game ran out of
+     * sets without anyone reaching 300 — it ends by exhaustion and the higher score wins
+     * (like free_rounds), rather than being misreported as a tie. An exact tie at/above
+     * 300 stays unresolved (null) for the host, matching classicWinner's semantics.
+     */
+    public static function classicFinalWinner(int $blueScore, int $redScore): ?string
+    {
+        $winner = self::classicWinner($blueScore, $redScore);
+        if ($winner !== null) {
+            return $winner;
+        }
+        // Neither team crossed 300 -> ended by set exhaustion -> highest score wins.
+        if ($blueScore < self::CLASSIC_TARGET && $redScore < self::CLASSIC_TARGET) {
+            return self::freeRoundsWinner($blueScore, $redScore);
+        }
+        // Exact tie at/above the target — host resolves manually.
+        return null;
+    }
+
     /** Spec §4.4: free_rounds winner once the game is ended (sets exhausted or host ends it). */
     public static function freeRoundsWinner(int $blueScore, int $redScore): ?string
     {

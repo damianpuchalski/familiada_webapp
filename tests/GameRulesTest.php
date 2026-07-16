@@ -78,6 +78,23 @@ check('classicWinner: red over -> red', GameRules::classicWinner(150, 305) === '
 check('classicWinner: both over, higher wins', GameRules::classicWinner(310, 305) === 'blue', $failures, $passed);
 check('classicWinner: exact tie at 300 -> null (host resolves)', GameRules::classicWinner(300, 300) === null, $failures, $passed);
 
+// --- classicFinalWinner: Spec §4.4, final winner for an ENDED classic_300 game.
+// Crossing 300 keeps instant-win; running out of sets below 300 falls back to
+// highest-score-wins instead of the old false "REMIS" (winner null). ---
+check('classicFinalWinner: blue crossed 300 -> blue', GameRules::classicFinalWinner(305, 120) === 'blue', $failures, $passed);
+check('classicFinalWinner: red crossed 300 -> red', GameRules::classicFinalWinner(90, 300) === 'red', $failures, $passed);
+check('classicFinalWinner: exhausted below 300, blue leads -> blue', GameRules::classicFinalWinner(180, 140) === 'blue', $failures, $passed);
+check('classicFinalWinner: exhausted below 300, red leads -> red', GameRules::classicFinalWinner(140, 180) === 'red', $failures, $passed);
+check('classicFinalWinner: exhausted below 300, genuine tie -> null', GameRules::classicFinalWinner(150, 150) === null, $failures, $passed);
+check('classicFinalWinner: exact tie at/above 300 -> null (host resolves)', GameRules::classicFinalWinner(300, 300) === null, $failures, $passed);
+check('classicFinalWinner: both over 300, higher wins', GameRules::classicFinalWinner(320, 305) === 'blue', $failures, $passed);
+check(
+    'classicFinalWinner differs from classicWinner on set-exhaustion (250 vs 200): winner vs null',
+    GameRules::classicFinalWinner(250, 200) === 'blue' && GameRules::classicWinner(250, 200) === null,
+    $failures,
+    $passed
+);
+
 // --- freeRoundsWinner: Spec §4.4, higher score wins when sets run out ---
 check('freeRoundsWinner: blue higher', GameRules::freeRoundsWinner(120, 90) === 'blue', $failures, $passed);
 check('freeRoundsWinner: red higher', GameRules::freeRoundsWinner(50, 60) === 'red', $failures, $passed);
