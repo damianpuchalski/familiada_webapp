@@ -9,6 +9,33 @@ require_once __DIR__ . '/config.php';
  * Spec §7 / PROJECT_SPEC.md. Never reveal whether a wrong guess was "close".
  */
 
+// Brute-force throttle for the single shared cockpit password: after
+// AUTH_MAX_FAILURES consecutive wrong guesses, further attempts are rejected for
+// AUTH_LOCKOUT_SECONDS (session-based — sufficient for one shared host, Spec §7).
+const AUTH_MAX_FAILURES = 5;
+const AUTH_LOCKOUT_SECONDS = 60;
+
+/**
+ * True while the current session is locked out after too many failed logins.
+ * Once the window has elapsed the counters are cleared so the next attempt is
+ * allowed again. Callers must not leak the remaining time to the client.
+ */
+function auth_is_throttled(): bool
+{
+    auth_start_session();
+    $fails = (int) ($_SESSION['auth_fail_count'] ?? 0);
+    if ($fails < AUTH_MAX_FAILURES) {
+        return false;
+    }
+    $last = (int) ($_SESSION['auth_last_fail'] ?? 0);
+    if ((time() - $last) >= AUTH_LOCKOUT_SECONDS) {
+        // Lockout window elapsed — reset and let the user try again.
+        unset($_SESSION['auth_fail_count'], $_SESSION['auth_last_fail']);
+        return false;
+    }
+    return true;
+}
+
 function auth_start_session(): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
@@ -49,6 +76,11 @@ function auth_is_logged_in(): bool
 function auth_attempt(string $password): bool
 {
     auth_start_session();
+    // Refuse to even check the password while locked out (defense in depth; the
+    // API endpoint also guards on auth_is_throttled()).
+    if (auth_is_throttled()) {
+        return false;
+    }
     $cfg = familiada_config();
     $hash = (string) ($cfg['auth_password_hash'] ?? '');
     if ($hash === '' || str_contains($hash, 'REPLACE_ME')) {
@@ -59,7 +91,11 @@ function auth_attempt(string $password): bool
     if ($valid) {
         $_SESSION['authed'] = true;
         $_SESSION['auth_last_seen'] = time();
+        unset($_SESSION['auth_fail_count'], $_SESSION['auth_last_fail']);
         session_regenerate_id(true);
+    } else {
+        $_SESSION['auth_fail_count'] = (int) ($_SESSION['auth_fail_count'] ?? 0) + 1;
+        $_SESSION['auth_last_fail'] = time();
     }
     return $valid;
 }

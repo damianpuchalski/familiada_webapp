@@ -17,6 +17,10 @@ json_guard(function (): void {
         if ($password === '') {
             json_error('Nieprawidłowe hasło. Spróbuj ponownie.', 401);
         }
+        if (auth_is_throttled()) {
+            // Generic message — don't disclose the lockout window to an attacker.
+            json_error('Zbyt wiele prób logowania. Spróbuj ponownie za chwilę.', 429);
+        }
         if (auth_attempt($password)) {
             json_ok(['authed' => true]);
         }
