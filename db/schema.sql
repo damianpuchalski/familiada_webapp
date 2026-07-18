@@ -169,6 +169,8 @@ CREATE TABLE game_state (
   steal_in_progress     TINYINT(1) NOT NULL DEFAULT 0,
   steal_result          ENUM('none','success','failed') NOT NULL DEFAULT 'none', -- set the moment a steal attempt resolves; banking/round_end now waits for the presenter's manual "ZAKOŃCZ RUNDĘ" click
   round_pot             INT NOT NULL DEFAULT 0,   -- raw sum; multiplier applied at finish
+  cue                   VARCHAR(32) NULL,          -- last sound cue stamped by an action; played by every viewer when cue_seq advances (server-authoritative cues, replaces client-side snapshot diffing)
+  cue_seq               INT UNSIGNED NOT NULL DEFAULT 0, -- monotonic per game; clients play `cue` when this increases past the last one they played (a non-increase = restart/switch = resync, not replay)
   -- finale timer anchors (all server-clock based)
   finale_timer_status   ENUM('idle','running','paused','expired') NOT NULL DEFAULT 'idle',
   finale_duration       INT NOT NULL DEFAULT 15,

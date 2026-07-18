@@ -11,6 +11,22 @@
   let prevState = null;
   let gameId = null;
   let busy = false; // guards against double-submits between polls
+  // Last server cue_seq we've played (see applyCue). null until first observed so
+  // the cockpit doesn't replay a cue that's already on the wire when it loads.
+  let lastCueSeq = null;
+
+  // Server-authoritative cue playback. Play `cue` when cue_seq advances; always
+  // resync so a non-increase (restart / game switch) self-corrects without a
+  // spurious sound. Non-gating on purpose — the host's control UI must never
+  // freeze waiting on audio (the board is what gates its reveal on the sound).
+  function applyCue(state) {
+    if (!state) return;
+    if (lastCueSeq !== null && state.cue && state.cue_seq > lastCueSeq) {
+      SoundCues.setUrls(state.sound_urls);
+      SoundCues.playCue(state.cue);
+    }
+    if (typeof state.cue_seq === 'number') lastCueSeq = state.cue_seq;
+  }
 
   const CUE_LABELS = {
     correct: 'Odp - Popr',
@@ -27,15 +43,12 @@
     return d.innerHTML;
   }
 
-  // skipDetect: true for actions whose transition cue was already played manually
-  // by the caller (see beginGame()/goNextRound()) — avoids a duplicate playback
-  // on this device from detectAndPlay() re-noticing the same phase change.
-  async function callAction(action, extra, skipDetect) {
+  async function callAction(action, extra) {
     if (busy) return;
     busy = true;
     try {
       const state = await Api.postJson('../api/action.php', { action, game_id: gameId, ...extra });
-      if (!skipDetect) SoundCues.detectAndPlay(prevState, state);
+      applyCue(state);
       renderState(state);
       prevState = state;
       return state;
@@ -197,45 +210,30 @@
     });
     root.querySelectorAll('.cue-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        SoundCues.playCue(btn.dataset.cue);
+        // Route through the server so the board hears the manual cue too; applyCue()
+        // plays it locally from the response.
+        callAction('cue', { cue: btn.dataset.cue });
         btn.classList.add('flash');
         setTimeout(() => btn.classList.remove('flash'), 400);
       });
     });
   }
 
-  let gating = false; // separate from `busy` — covers the pre-action sound-playback window too
-
-  // START GRY: play game_start, then transition lobby -> round only once it's finished
-  // (Spec: the board must not show "Pytanie 1" until the presenter's music has ended).
+  // START GRY: lobby -> round. The server stamps the game_start cue on this action,
+  // so applyCue() plays it here immediately and the board plays its own copy within
+  // one poll (gating its "Pytanie 1" reveal on that sound). No local pre-play / await
+  // — the presenter's UI shouldn't block on audio, and the board no longer waits on
+  // this device's playback to finish before the server leaves the lobby.
   async function beginGame() {
-    if (gating || busy) return;
-    gating = true;
-    try {
-      await SoundCues.playCue('game_start');
-      await callAction('begin_game', undefined, true);
-    } finally {
-      gating = false;
-    }
+    await callAction('begin_game');
   }
 
-  // NASTĘPNA RUNDA / ZAKOŃCZ GRĘ: round_end already played the moment the round
-  // actually ended (finish_round / the steal resolving — detectAndPlay caught that
-  // transition). This click advances, then plays the cue for wherever it landed:
-  // round_start when another round loaded, or end_game when this was the final
-  // round (game over). Previously it always played round_start, which overlapped
-  // the board's end_game cue on the last round.
+  // NASTĘPNA RUNDA / ZAKOŃCZ GRĘ: the server stamps the right cue for wherever
+  // advance_round lands — round_start when another round loaded, or end_game when
+  // this was the final round — so applyCue() plays exactly one of them. No more
+  // client-side phase guessing (which used to overlap end_game with round_start).
   async function goNextRound() {
-    if (gating || busy) return;
-    gating = true;
-    try {
-      const state = await callAction('advance_round', undefined, true);
-      if (state) {
-        SoundCues.playCue(state.phase === 'finished' ? 'end_game' : 'round_start');
-      }
-    } finally {
-      gating = false;
-    }
+    await callAction('advance_round');
   }
 
   async function poll() {
@@ -243,7 +241,7 @@
       const url = gameId ? `../api/state.php?game_id=${gameId}` : '../api/state.php';
       const state = await Api.getJson(url);
       if (!busy) {
-        SoundCues.detectAndPlay(prevState, state);
+        applyCue(state);
         renderState(state);
         prevState = state;
       }

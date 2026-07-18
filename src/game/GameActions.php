@@ -136,6 +136,11 @@ final class GameActions
             'steal_in_progress'  => $state ? (bool) $state['steal_in_progress'] : false,
             'steal_result'       => $state['steal_result'] ?? 'none',
             'round_pot'          => $state ? (int) $state['round_pot'] : 0,
+            // Server-authoritative sound cue: `cue` is the last cue an action stamped, `cue_seq`
+            // a monotonic counter. Board + presenter each play `cue` the moment they see cue_seq
+            // advance past the last one they played (see board.js / cockpit.js) — no snapshot diffing.
+            'cue'                => $state['cue'] ?? null,
+            'cue_seq'            => $state ? (int) $state['cue_seq'] : 0,
             'is_last_round'      => $isLastRound,
             'team_select_locked' => GameRules::isTeamSelectLocked($revealedCount),
             // Before the presenter reveals the question (phase=round, question_revealed=0),
@@ -163,6 +168,19 @@ final class GameActions
     // ---------------------------------------------------------------
     // Round-flow actions (Spec §4.2-4.4)
     // ---------------------------------------------------------------
+
+    /**
+     * Records the sound cue every viewer should play next and bumps the monotonic
+     * cue_seq so board+presenter fire it exactly once (Spec §8). Call inside the
+     * mutating action's own transaction — `cue_seq + 1` is then atomic. Public so
+     * the manual cue grid (action.php's 'cue' action) can broadcast a cue to the
+     * board without changing any game state.
+     */
+    public static function stampCue(PDO $pdo, int $gameId, string $cue): void
+    {
+        $pdo->prepare('UPDATE game_state SET cue = ?, cue_seq = cue_seq + 1 WHERE game_id = ?')
+            ->execute([$cue, $gameId]);
+    }
 
     public static function setTeam(PDO $pdo, int $gameId, string $team): void
     {
@@ -226,6 +244,9 @@ final class GameActions
             }
 
             $pdo->prepare('UPDATE game_answers SET revealed = 1 WHERE id = ?')->execute([$answerId]);
+            // 'correct' ding on every reveal — including round_end "reveal for show" (parity with
+            // the old client-side detectAndPlay, which dinged whenever the revealed count rose).
+            self::stampCue($pdo, $gameId, 'correct');
 
             if ($state['phase'] === 'round_end') {
                 // Post-round "reveal for show" — the pot is already banked, this is purely
@@ -289,6 +310,9 @@ final class GameActions
                 }
             }
 
+            // Every strike() path is audible: a normal strike, the 3rd strike that opens the steal,
+            // and a failed steal (steal_result='failed') all play the strike cue.
+            self::stampCue($pdo, $gameId, 'strike');
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -330,6 +354,7 @@ final class GameActions
                 self::bankPointsAndCloseRound($pdo, $gameId, $state, (int) $state['round_pot'], $state['starting_team']);
             }
 
+            self::stampCue($pdo, $gameId, 'round_end');
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -350,6 +375,11 @@ final class GameActions
             self::assertPhase($state, ['round_end']);
 
             self::advanceAfterRoundEnd($pdo, $gameId, $state);
+            // Cue depends on where advanceAfterRoundEnd() landed: end_game if this was the final
+            // round (game over), round_start if another round loaded. Server decides — the client
+            // no longer guesses phase==='finished' (which used to overlap end_game with round_start).
+            $newState = self::fetchGameState($pdo, $gameId);
+            self::stampCue($pdo, $gameId, ($newState['phase'] ?? null) === 'finished' ? 'end_game' : 'round_start');
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -370,6 +400,7 @@ final class GameActions
             self::assertPhase($state, ['lobby']);
 
             $pdo->prepare('UPDATE game_state SET phase = "round" WHERE game_id = ?')->execute([$gameId]);
+            self::stampCue($pdo, $gameId, 'game_start');
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -492,6 +523,7 @@ final class GameActions
             }
 
             self::endGame($pdo, $gameId);
+            self::stampCue($pdo, $gameId, 'end_game');
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();

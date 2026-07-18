@@ -60,6 +60,10 @@ try {
     ]);
 
     GameActions::startGame($pdo, $gameId);
+    // startGame lands in the lobby; the host's START GRY (beginGame) moves it to
+    // phase=round, then POKAŻ PYTANIE (revealQuestion) opens the setTeam/reveal gate.
+    GameActions::beginGame($pdo, $gameId);
+    GameActions::revealQuestion($pdo, $gameId);
     GameActions::setTeam($pdo, $gameId, 'red');
 
     $state = GameActions::getBoardState($pdo, $gameId);

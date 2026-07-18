@@ -9,6 +9,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
 use Familiada\Game\GameActions;
+use Familiada\Game\SoundLibrary;
 
 json_guard(function (): void {
     auth_require_api();
@@ -72,6 +73,16 @@ json_guard(function (): void {
 
         case 'restart_game':
             GameActions::restartGame($pdo, $gameId);
+            break;
+
+        case 'cue':
+            // Presenter's manual cue grid: broadcast a sound cue to every viewer (incl. the
+            // board) without changing game state — see cockpit.js. Spec §8.
+            $cue = v_enum($body['cue'] ?? null, SoundLibrary::CUES);
+            if ($cue === null) {
+                json_error('Missing or invalid cue', 400);
+            }
+            GameActions::stampCue($pdo, $gameId, $cue);
             break;
 
         default:

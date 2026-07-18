@@ -27,6 +27,9 @@
 
   let prevState = null;
   let knownRevealedIds = new Set();
+  // Last server cue_seq we've played. null until the first poll so a board that
+  // joins mid-game never replays the cue that's already on the wire.
+  let lastCueSeq = null;
 
   function esc(s) {
     const d = document.createElement('div');
@@ -149,29 +152,37 @@
     knownRevealedIds = nowRevealedIds;
   }
 
-  // These two transitions must be heard before the board visually reveals
-  // anything (the presenter's cue leading the reveal, not trailing it) — Audio's
-  // play() has real network/decode latency, so rendering immediately alongside
-  // it lets the visual win the race and the sound arrives audibly late.
-  function gatingCueFor(prev, next) {
-    if (!prev) return null;
-    if (next.phase === 'round' && prev.phase === 'lobby') return 'game_start';
-    if (next.phase === 'round' && prev.phase === 'round_end' && prev.round_number !== next.round_number) return 'round_start';
-    return null;
-  }
-
   async function poll() {
     try {
       const state = await Api.getJson('api/state.php');
-      const gatingCue = gatingCueFor(prevState, state);
-      if (gatingCue) {
-        // Keep the previous frame on screen (nothing to render yet) until the
-        // cue has actually finished playing.
-        SoundCues.setUrls(state.sound_urls);
-        await SoundCues.playCue(gatingCue);
-      } else {
-        SoundCues.detectAndPlay(prevState, state);
+      SoundCues.setUrls(state.sound_urls);
+
+      // Server-authoritative cues: play `cue` when cue_seq advances past the last
+      // one we played. We always resync lastCueSeq to the server's value, so a
+      // non-increase (game restart / switching to another game, which start their
+      // seq lower) self-corrects with no spurious playback — only a strict
+      // increase fires a sound.
+      const advanced = lastCueSeq !== null && state.cue && state.cue_seq > lastCueSeq;
+
+      // game_start / round_start must be *heard before* the board visually reveals
+      // the new frame (the cue leads the reveal, not trails it). Gate the render on
+      // the board's own audio finishing — but only when the cue coincides with the
+      // matching phase transition, so a manually-triggered game_start mid-round
+      // just plays without freezing the board.
+      const gate = advanced && (
+        (state.cue === 'game_start' && prevState && prevState.phase === 'lobby' && state.phase === 'round') ||
+        (state.cue === 'round_start' && prevState && prevState.phase === 'round_end' && state.phase === 'round')
+      );
+
+      lastCueSeq = state.cue_seq;
+
+      if (gate) {
+        // Keep the previous frame on screen until the cue has actually finished.
+        await SoundCues.playCue(state.cue);
+      } else if (advanced) {
+        SoundCues.playCue(state.cue); // fire-and-forget
       }
+
       render(state);
       prevState = state;
     } catch (e) {

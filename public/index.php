@@ -11,9 +11,9 @@ $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Plansza — Familiada</title>
-<link rel="stylesheet" href="assets/css/tokens.css">
-<link rel="stylesheet" href="assets/css/board.css">
-<link rel="stylesheet" href="assets/css/footer.css">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('assets', 'css/tokens.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('assets', 'css/board.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('assets', 'css/footer.css'), ENT_QUOTES) ?>">
 </head>
 <body class="board">
 <div class="board-stage" id="stage" data-poll-ms="<?= $pollMs ?>">
@@ -36,8 +36,8 @@ $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
 
 <?php include __DIR__ . '/partials/footer.php'; ?>
 
-<script src="assets/js/api.js"></script>
-<script src="assets/js/sound.js"></script>
-<script src="assets/js/board.js"></script>
+<script src="<?= htmlspecialchars(familiada_asset('assets', 'js/api.js'), ENT_QUOTES) ?>"></script>
+<script src="<?= htmlspecialchars(familiada_asset('assets', 'js/sound.js'), ENT_QUOTES) ?>"></script>
+<script src="<?= htmlspecialchars(familiada_asset('assets', 'js/board.js'), ENT_QUOTES) ?>"></script>
 </body>
 </html>

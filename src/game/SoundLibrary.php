@@ -53,7 +53,16 @@ final class SoundLibrary
     /** Absolute, browser-usable URL for a path relative to baseDir(). */
     public static function urlFor(string $relativePath): string
     {
-        return self::urlBase() . '/' . ltrim($relativePath, '/');
+        $rel = ltrim($relativePath, '/');
+        $url = self::urlBase() . '/' . $rel;
+        // Cache-bust on file mtime so a re-uploaded/edited cue (e.g. a trimmed
+        // correct.wav) is fetched fresh instead of served stale from the browser's
+        // audio cache — the board/prezenter otherwise never see the new file.
+        $fsPath = self::baseDir() . '/' . $rel;
+        if (is_file($fsPath)) {
+            $url .= '?v=' . filemtime($fsPath);
+        }
+        return $url;
     }
 
     public static function folderForPackName(string $packName): string

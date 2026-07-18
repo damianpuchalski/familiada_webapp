@@ -23,9 +23,9 @@ $expired = isset($_GET['expired']);
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Logowanie — Familiada</title>
-<link rel="stylesheet" href="../assets/css/tokens.css">
-<link rel="stylesheet" href="../assets/css/cockpit.css">
-<link rel="stylesheet" href="../assets/css/footer.css">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/tokens.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/cockpit.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/footer.css'), ENT_QUOTES) ?>">
 </head>
 <body class="cockpit">
 <div class="login-wrap">
@@ -49,7 +49,7 @@ $expired = isset($_GET['expired']);
   </form>
 </div>
 <?php $footerAssetPrefix = '../'; include __DIR__ . '/../partials/footer.php'; ?>
-<script src="../assets/js/api.js"></script>
-<script src="../assets/js/login.js"></script>
+<script src="<?= htmlspecialchars(familiada_asset('../assets', 'js/api.js'), ENT_QUOTES) ?>"></script>
+<script src="<?= htmlspecialchars(familiada_asset('../assets', 'js/login.js'), ENT_QUOTES) ?>"></script>
 </body>
 </html>

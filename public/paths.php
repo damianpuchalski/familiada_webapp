@@ -45,6 +45,28 @@ if (!defined('FAMILIADA_PRIVATE_DIR')) {
     define('FAMILIADA_PRIVATE_DIR', rtrim($dir, "/\\"));
 }
 
+if (!function_exists('familiada_asset')) {
+    /**
+     * Versioned asset URL: appends ?v=<file mtime> so browsers refetch changed
+     * JS/CSS after a deploy instead of serving a stale cached copy (the same
+     * cache-bust SoundLibrary::urlFor() does for cue files). $urlPrefix is the
+     * caller's web-relative path to the assets dir — 'assets' for a page at the
+     * web root, '../assets' for pages under /admin. The file is always resolved
+     * on disk relative to THIS file (public/), so the version reflects the real
+     * deployed file regardless of the caller's nesting.
+     */
+    function familiada_asset(string $urlPrefix, string $rel): string
+    {
+        $rel = ltrim($rel, '/');
+        $url = rtrim($urlPrefix, '/') . '/' . $rel;
+        $fsPath = __DIR__ . '/assets/' . $rel;
+        if (is_file($fsPath)) {
+            $url .= '?v=' . filemtime($fsPath);
+        }
+        return $url;
+    }
+}
+
 // Fail loudly and clearly if the resolved directory isn't actually the private
 // code root — otherwise a misconfigured server yields an opaque "failed to open
 // stream" on the next require.

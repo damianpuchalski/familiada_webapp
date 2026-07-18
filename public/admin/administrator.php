@@ -15,9 +15,9 @@ $headerMultiplierChip = null;
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Administrator — Familiada</title>
-<link rel="stylesheet" href="../assets/css/tokens.css">
-<link rel="stylesheet" href="../assets/css/cockpit.css">
-<link rel="stylesheet" href="../assets/css/footer.css">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/tokens.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/cockpit.css'), ENT_QUOTES) ?>">
+<link rel="stylesheet" href="<?= htmlspecialchars(familiada_asset('../assets', 'css/footer.css'), ENT_QUOTES) ?>">
 </head>
 <body class="cockpit">
 <?php
@@ -30,8 +30,8 @@ include __DIR__ . '/_header.php';
 
 <?php $footerAssetPrefix = '../'; include __DIR__ . '/../partials/footer.php'; ?>
 
-<script src="../assets/js/api.js"></script>
-<script src="../assets/js/sound.js"></script>
-<script src="../assets/js/admin.js"></script>
+<script src="<?= htmlspecialchars(familiada_asset('../assets', 'js/api.js'), ENT_QUOTES) ?>"></script>
+<script src="<?= htmlspecialchars(familiada_asset('../assets', 'js/sound.js'), ENT_QUOTES) ?>"></script>
+<script src="<?= htmlspecialchars(familiada_asset('../assets', 'js/admin.js'), ENT_QUOTES) ?>"></script>
 </body>
 </html>
