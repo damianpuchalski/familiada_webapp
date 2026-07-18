@@ -298,6 +298,13 @@ final class GameActions
                 // be audible, not silently jump straight to the round_end cue).
                 $pdo->prepare('UPDATE game_state SET steal_result = "failed" WHERE game_id = ?')->execute([$gameId]);
             } else {
+                // A cleared board (every answer of the current question revealed) means the
+                // round is effectively won — nothing is left to guess, so a strike makes no
+                // sense (Spec §4.2). The cockpit also disables the BŁĄD button here; this is
+                // the server-side enforcement (defense in depth).
+                if (self::isBoardCleared($pdo, $state)) {
+                    throw new RuntimeException('All answers revealed — the board is cleared, cannot strike');
+                }
                 $result = GameRules::applyStrike((int) $state['strikes']);
                 if ($result['enteredSteal']) {
                     $stealingTeam = GameRules::opposite($state['starting_team']);
@@ -780,5 +787,24 @@ final class GameActions
         $stmt = $pdo->prepare('SELECT COUNT(*) c FROM game_answers WHERE game_question_id = ? AND revealed = 1');
         $stmt->execute([$question['id']]);
         return (int) $stmt->fetch()['c'];
+    }
+
+    /** True when the current question has at least one answer and every one is revealed. */
+    private static function isBoardCleared(PDO $pdo, array $state): bool
+    {
+        if (!$state['current_game_set_id']) {
+            return false;
+        }
+        $question = self::fetchQuestionForSet($pdo, (int) $state['current_game_set_id']);
+        if (!$question) {
+            return false;
+        }
+        $stmt = $pdo->prepare(
+            'SELECT COUNT(*) total, SUM(revealed = 1) revealed FROM game_answers WHERE game_question_id = ?'
+        );
+        $stmt->execute([$question['id']]);
+        $row = $stmt->fetch();
+        $total = (int) ($row['total'] ?? 0);
+        return $total > 0 && (int) ($row['revealed'] ?? 0) === $total;
     }
 }

@@ -118,6 +118,10 @@
     const stealResolved = state.phase === 'steal' && state.steal_result !== 'none';
     const canReveal = (state.phase === 'round' || state.phase === 'steal' || state.phase === 'round_end') && !questionPending && !stealResolved;
     const canPlay = (state.phase === 'round' || state.phase === 'steal') && !questionPending && !stealResolved;
+    // Every answer revealed = the board is cleared, so the round is effectively won —
+    // there's nothing left to guess and a strike is nonsensical. Disable BŁĄD here
+    // (the server enforces the same in GameActions::strike()).
+    const boardCleared = answers.length > 0 && answers.every((a) => a.revealed);
     const canFinish = (state.phase === 'round' && !questionPending) || (state.phase === 'steal' && stealResolved);
 
     const answerRows = answers.map((a, i) => `
@@ -167,7 +171,7 @@
           <div class="panel">
             <h2>Błędy ${state.strikes}/3</h2>
             <div class="strikes-row">${strikeBoxes}</div>
-            <button class="btn-strike" id="strikeBtn" ${canPlay ? '' : 'disabled'}>BŁĄD</button>
+            <button class="btn-strike" id="strikeBtn" ${canPlay && !boardCleared ? '' : 'disabled'}>BŁĄD</button>
           </div>
 
           ${state.phase === 'round_end' ? `
