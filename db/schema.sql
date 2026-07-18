@@ -49,7 +49,7 @@ CREATE TABLE sound_sets (
 CREATE TABLE sounds (
   id            INT UNSIGNED NOT NULL AUTO_INCREMENT,
   sound_set_id  INT UNSIGNED NOT NULL,
-  cue           ENUM('correct','strike','round_start','reveal','finale_timer','end_game') NOT NULL,
+  cue           ENUM('correct','strike','round_start','round_end','game_start','end_game') NOT NULL,
   file_path     VARCHAR(500) NOT NULL,
   PRIMARY KEY (id),
   UNIQUE KEY uq_sound_set_cue (sound_set_id, cue),
@@ -63,19 +63,27 @@ CREATE TABLE sounds (
 INSERT INTO sound_sets (id, name) VALUES
   (1, 'Klasyczny'),
   (2, 'Retro'),
-  (3, 'Filmowy');
+  (3, 'Modern');
 
 -- Starter cue files for the Klasyczny pack (synthesized WAVs shipped under
 -- public/assets/sounds/ — the web root, so playback works over HTTP; see §9).
 -- file_path is relative to config.php's 'sounds_path' (public/assets/sounds by default).
--- Retro and Filmowy have no files yet: they fall back to default/<cue>.wav.
+-- Retro has no files yet: it falls back to default/<cue>.wav. Modern's files are
+-- the same starter WAVs as default/ (copied into modern/), assigned explicitly so the
+-- pack has real files from the start instead of just falling back.
 INSERT INTO sounds (sound_set_id, cue, file_path) VALUES
   (1, 'correct',      'klasyczny/correct.wav'),
   (1, 'strike',       'klasyczny/strike.wav'),
   (1, 'round_start',  'klasyczny/round_start.wav'),
-  (1, 'reveal',       'klasyczny/reveal.wav'),
-  (1, 'finale_timer', 'klasyczny/finale_timer.wav'),
-  (1, 'end_game',     'klasyczny/end_game.wav');
+  (1, 'round_end',    'klasyczny/round_end.wav'),
+  (1, 'game_start',   'klasyczny/game_start.wav'),
+  (1, 'end_game',     'klasyczny/end_game.wav'),
+  (3, 'correct',      'modern/correct.wav'),
+  (3, 'strike',       'modern/strike.wav'),
+  (3, 'round_start',  'modern/round_start.wav'),
+  (3, 'round_end',    'modern/round_end.wav'),
+  (3, 'game_start',   'modern/game_start.wav'),
+  (3, 'end_game',     'modern/end_game.wav');
 
 -- ---------------------------------------------------------------------------
 -- Games + per-game content (frozen by status: mutable while draft, read-only once started)
@@ -154,10 +162,12 @@ CREATE TABLE game_state (
   game_id               INT UNSIGNED NOT NULL,
   phase                 ENUM('lobby','round','steal','round_end','finale','finished') NOT NULL DEFAULT 'lobby',
   current_game_set_id   INT UNSIGNED NULL,
+  question_revealed     TINYINT(1) NOT NULL DEFAULT 1, -- gates question/answers visibility to the public board until the presenter reveals it
   active_team           ENUM('blue','red') NULL,
   starting_team         ENUM('blue','red') NULL,
   strikes               TINYINT NOT NULL DEFAULT 0,
   steal_in_progress     TINYINT(1) NOT NULL DEFAULT 0,
+  steal_result          ENUM('none','success','failed') NOT NULL DEFAULT 'none', -- set the moment a steal attempt resolves; banking/round_end now waits for the presenter's manual "ZAKOŃCZ RUNDĘ" click
   round_pot             INT NOT NULL DEFAULT 0,   -- raw sum; multiplier applied at finish
   -- finale timer anchors (all server-clock based)
   finale_timer_status   ENUM('idle','running','paused','expired') NOT NULL DEFAULT 'idle',
