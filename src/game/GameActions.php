@@ -75,6 +75,28 @@ final class GameActions
                 : GameRules::freeRoundsWinner($blueScore, $redScore);
         }
 
+        // Whether finishing/advancing the current round will end the game rather
+        // than load another round — mirrors advanceAfterRoundEnd()'s decision so the
+        // cockpit can label the button "ZAKOŃCZ GRĘ" and play only the end_game cue
+        // (not round_start) on the final round. Most meaningful at round_end, where
+        // this round's points are already banked (classic_300's >=300 check is exact).
+        $isLastRound = false;
+        if ($currentSet && in_array($state['phase'] ?? null, ['round', 'steal', 'round_end'], true)) {
+            $blueScore = (int) ($teams['blue']['score'] ?? 0);
+            $redScore = (int) ($teams['red']['score'] ?? 0);
+            if ($mode === 'classic_300' && GameRules::classicWinner($blueScore, $redScore) !== null) {
+                $isLastRound = true;
+            } else {
+                $nextSet = self::fetchQuestionSetByRound($pdo, $gameId, (int) $currentSet['round_number'] + 1);
+                $isLastRound = $nextSet === null;
+            }
+        }
+
+        $questionHidden = $redactHidden
+            && $state
+            && in_array($state['phase'] ?? null, ['lobby', 'round'], true)
+            && (int) $state['question_revealed'] === 0;
+
         $soundSetId = $game['sound_set_id'] !== null ? (int) $game['sound_set_id'] : null;
         $soundUrls = [];
         $soundSetName = null;
@@ -107,18 +129,24 @@ final class GameActions
             'phase'              => $state['phase'] ?? 'lobby',
             'round_number'       => $roundNumber !== null ? (int) $roundNumber : null,
             'multiplier'         => (int) $multiplier,
+            'question_revealed'  => $state ? (bool) $state['question_revealed'] : true,
             'starting_team'      => $state['starting_team'] ?? null,
             'active_team'        => $state['active_team'] ?? null,
             'strikes'            => $state ? (int) $state['strikes'] : 0,
             'steal_in_progress'  => $state ? (bool) $state['steal_in_progress'] : false,
+            'steal_result'       => $state['steal_result'] ?? 'none',
             'round_pot'          => $state ? (int) $state['round_pot'] : 0,
+            'is_last_round'      => $isLastRound,
             'team_select_locked' => GameRules::isTeamSelectLocked($revealedCount),
-            'question'           => $question ? ['id' => (int) $question['id'], 'text' => $question['text']] : null,
-            'answers'            => array_map(static function (array $a) use ($redactHidden): array {
+            // Before the presenter reveals the question (phase=round, question_revealed=0),
+            // hide question text and all answers from unauthenticated callers so a contestant
+            // can never read ahead of the presenter (Spec §3.2, §7 extended by the reveal gate).
+            'question'           => $question
+                ? ['id' => (int) $question['id'], 'text' => $questionHidden ? '' : $question['text']]
+                : null,
+            'answers'            => array_map(static function (array $a) use ($redactHidden, $questionHidden): array {
                 $revealed = (int) $a['revealed'] === 1;
-                // Redact text/points of still-hidden answers for unauthenticated callers so
-                // the public board can't scrape them ahead of the reveal (Spec §3.2, §7).
-                $hide = $redactHidden && !$revealed;
+                $hide = $questionHidden || ($redactHidden && !$revealed);
                 return [
                     'id'       => (int) $a['id'],
                     'text'     => $hide ? '' : $a['text'],
@@ -145,6 +173,7 @@ final class GameActions
         try {
             $state = self::fetchGameState($pdo, $gameId, true);
             self::assertPhase($state, ['round']);
+            self::assertQuestionRevealed($state);
 
             $revealedCount = self::currentRevealedCount($pdo, $state);
             if (GameRules::isTeamSelectLocked($revealedCount)) {
@@ -167,7 +196,7 @@ final class GameActions
         $pdo->beginTransaction();
         try {
             $state = self::fetchGameState($pdo, $gameId, true);
-            self::assertPhase($state, ['round', 'steal']);
+            self::assertPhase($state, ['round', 'steal', 'round_end']);
 
             // Require a starting team before revealing in a normal round: otherwise 3 reveals
             // lock setTeam() (Spec §4.3) and finishRound()/endGameByHost() can never bank the
@@ -175,6 +204,12 @@ final class GameActions
             // by then a team was already chosen and the steal target is set.
             if ($state['phase'] === 'round' && empty($state['starting_team'])) {
                 throw new RuntimeException('Select a starting team before revealing answers.');
+            }
+            if ($state['phase'] !== 'round_end') {
+                self::assertQuestionRevealed($state);
+            }
+            if ($state['phase'] === 'steal' && $state['steal_result'] !== 'none') {
+                throw new RuntimeException('Steal already resolved for this round — click ZAKOŃCZ RUNDĘ');
             }
 
             $answer = self::fetchAnswerForUpdate($pdo, $answerId);
@@ -191,12 +226,23 @@ final class GameActions
             }
 
             $pdo->prepare('UPDATE game_answers SET revealed = 1 WHERE id = ?')->execute([$answerId]);
+
+            if ($state['phase'] === 'round_end') {
+                // Post-round "reveal for show" — the pot is already banked, this is purely
+                // cosmetic so the audience sees every answer; no points change hands.
+                $pdo->commit();
+                return;
+            }
+
             $newPot = (int) $state['round_pot'] + (int) $answer['points'];
 
             if ($state['phase'] === 'steal') {
-                // Spec §4.2 clause 4: steal succeeds -> award entire pot to the stealing team now.
-                $stealingTeam = $state['active_team'];
-                self::bankPointsAndCloseRound($pdo, $gameId, $state, $newPot, $stealingTeam);
+                // Spec §4.2 clause 4: steal succeeds -> the pot is now earmarked for the
+                // stealing team, but banking/round_end waits for the presenter's manual
+                // "ZAKOŃCZ RUNDĘ" click (finishRound()) — no auto-transition here.
+                $pdo->prepare(
+                    'UPDATE game_state SET round_pot = ?, steal_result = "success" WHERE game_id = ?'
+                )->execute([$newPot, $gameId]);
             } else {
                 $pdo->prepare('UPDATE game_state SET round_pot = ? WHERE game_id = ?')->execute([$newPot, $gameId]);
             }
@@ -214,14 +260,22 @@ final class GameActions
         try {
             $state = self::fetchGameState($pdo, $gameId, true);
             self::assertPhase($state, ['round', 'steal']);
+            self::assertQuestionRevealed($state);
 
             if (empty($state['starting_team'])) {
                 throw new RuntimeException('No starting team set for this round yet');
             }
 
             if ($state['phase'] === 'steal') {
-                // Spec §4.2 clause 4: steal fails -> award entire pot to the starting team.
-                self::bankPointsAndCloseRound($pdo, $gameId, $state, (int) $state['round_pot'], $state['starting_team']);
+                if ($state['steal_result'] !== 'none') {
+                    throw new RuntimeException('Steal already resolved for this round — click ZAKOŃCZ RUNDĘ');
+                }
+                // Spec §4.2 clause 4: steal fails -> the pot is earmarked for the starting
+                // team, but banking/round_end waits for the presenter's manual "ZAKOŃCZ
+                // RUNDĘ" click (finishRound()) — this only records the outcome so the
+                // client can play the strike cue (Spec §8 extended: a failed steal must
+                // be audible, not silently jump straight to the round_end cue).
+                $pdo->prepare('UPDATE game_state SET steal_result = "failed" WHERE game_id = ?')->execute([$gameId]);
             } else {
                 $result = GameRules::applyStrike((int) $state['strikes']);
                 if ($result['enteredSteal']) {
@@ -243,27 +297,101 @@ final class GameActions
     }
 
     /**
-     * ZAKOŃCZ RUNDĘ. Valid from phase=round (board-cleared / host ends round early —
-     * banks the pot to the starting/active team) or phase=round_end (steal already
-     * banked the pot; this just advances). Always advances to the next round or ends
-     * the game. Spec §4.2 clause 5, §4.4.
+     * ZAKOŃCZ RUNDĘ. The presenter's manual "the round is over, bank it" click —
+     * this is what actually transitions to phase=round_end (and so is what plays
+     * the round_end cue; see sound.js). Valid from:
+     *   - phase=round (board-cleared / host ends round early) — banks the pot to
+     *     the starting team.
+     *   - phase=steal, but only once the steal attempt has resolved (steal_result
+     *     != 'none' — set by reveal()/strike()): banks to whichever team the
+     *     resolved outcome earmarked (the stealer on success, the starting team
+     *     on failure). A steal still mid-attempt (steal_result='none') can't be
+     *     finished yet — there's nothing to bank.
+     * Does NOT advance to the next round: that only happens once the presenter
+     * clicks again for advanceRound() (Spec §4.2 clause 5, §4.4).
      */
     public static function finishRound(PDO $pdo, int $gameId): void
     {
         $pdo->beginTransaction();
         try {
             $state = self::fetchGameState($pdo, $gameId, true);
-            self::assertPhase($state, ['round', 'round_end']);
+            self::assertPhase($state, ['round', 'steal']);
 
-            if ($state['phase'] === 'round') {
+            if ($state['phase'] === 'steal') {
+                if ($state['steal_result'] === 'none') {
+                    throw new RuntimeException('Steal attempt not resolved yet');
+                }
+                $winningTeam = $state['steal_result'] === 'success' ? $state['active_team'] : $state['starting_team'];
+                self::bankPointsAndCloseRound($pdo, $gameId, $state, (int) $state['round_pot'], $winningTeam);
+            } else {
                 if (empty($state['starting_team'])) {
                     throw new RuntimeException('No starting team set for this round yet');
                 }
                 self::bankPointsAndCloseRound($pdo, $gameId, $state, (int) $state['round_pot'], $state['starting_team']);
-                $state = self::fetchGameState($pdo, $gameId, true);
             }
 
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Presenter's "next round" step, called once the round_end sound cue has
+     * finished playing (client-gated — see cockpit.js). Loads the next round's
+     * question hidden (question_revealed=0) or ends the game if none remain.
+     */
+    public static function advanceRound(PDO $pdo, int $gameId): void
+    {
+        $pdo->beginTransaction();
+        try {
+            $state = self::fetchGameState($pdo, $gameId, true);
+            self::assertPhase($state, ['round_end']);
+
             self::advanceAfterRoundEnd($pdo, $gameId, $state);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Presenter's "START GAME" button, called once the game_start sound cue has
+     * finished playing on the presenter's device. lobby -> round, question stays
+     * hidden (question_revealed=0) until revealQuestion() is called.
+     */
+    public static function beginGame(PDO $pdo, int $gameId): void
+    {
+        $pdo->beginTransaction();
+        try {
+            $state = self::fetchGameState($pdo, $gameId, true);
+            self::assertPhase($state, ['lobby']);
+
+            $pdo->prepare('UPDATE game_state SET phase = "round" WHERE game_id = ?')->execute([$gameId]);
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * Presenter clicks "POKAŻ PYTANIE" once they've read the question aloud —
+     * reveals the question text/answers to the public board.
+     */
+    public static function revealQuestion(PDO $pdo, int $gameId): void
+    {
+        $pdo->beginTransaction();
+        try {
+            $state = self::fetchGameState($pdo, $gameId, true);
+            self::assertPhase($state, ['round']);
+            if ((int) $state['question_revealed'] === 1) {
+                throw new RuntimeException('Question already revealed');
+            }
+
+            $pdo->prepare('UPDATE game_state SET question_revealed = 1 WHERE game_id = ?')->execute([$gameId]);
             $pdo->commit();
         } catch (\Throwable $e) {
             $pdo->rollBack();
@@ -295,7 +423,7 @@ final class GameActions
         ]);
 
         $pdo->prepare(
-            'UPDATE game_state SET phase = "round_end", round_pot = ?, steal_in_progress = 0 WHERE game_id = ?'
+            'UPDATE game_state SET phase = "round_end", round_pot = ?, steal_in_progress = 0, steal_result = "none" WHERE game_id = ?'
         )->execute([$roundPot, $gameId]);
     }
 
@@ -329,7 +457,8 @@ final class GameActions
 
         $pdo->prepare(
             'UPDATE game_state SET phase = "round", current_game_set_id = ?, strikes = 0,
-             steal_in_progress = 0, round_pot = 0, starting_team = NULL, active_team = NULL
+             steal_in_progress = 0, round_pot = 0, starting_team = NULL, active_team = NULL,
+             question_revealed = 0
              WHERE game_id = ?'
         )->execute([$nextSet['id'], $gameId]);
     }
@@ -399,8 +528,8 @@ final class GameActions
                 ->execute([$gameId, $gameId]);
 
             $pdo->prepare(
-                'INSERT INTO game_state (game_id, phase, current_game_set_id, strikes, steal_in_progress, round_pot)
-                 VALUES (?, "round", ?, 0, 0, 0)'
+                'INSERT INTO game_state (game_id, phase, current_game_set_id, question_revealed, strikes, steal_in_progress, round_pot)
+                 VALUES (?, "lobby", ?, 0, 0, 0, 0)'
             )->execute([$gameId, $firstSet['id']]);
 
             self::demoteLiveAndPromote($pdo, $gameId);
@@ -491,16 +620,17 @@ final class GameActions
             $exists->execute([$gameId]);
             if ($exists->fetch()) {
                 $pdo->prepare(
-                    'UPDATE game_state SET phase = "round", current_game_set_id = ?, active_team = NULL,
-                     starting_team = NULL, strikes = 0, steal_in_progress = 0, round_pot = 0,
+                    'UPDATE game_state SET phase = "lobby", current_game_set_id = ?, question_revealed = 0,
+                     active_team = NULL, starting_team = NULL, strikes = 0, steal_in_progress = 0,
+                     steal_result = "none", round_pot = 0,
                      finale_timer_status = "idle", finale_duration = 15, finale_started_at = NULL,
                      finale_elapsed_before = 0, finale_player = 1, finale_question_index = 0
                      WHERE game_id = ?'
                 )->execute([$firstSet['id'], $gameId]);
             } else {
                 $pdo->prepare(
-                    'INSERT INTO game_state (game_id, phase, current_game_set_id, strikes, steal_in_progress, round_pot)
-                     VALUES (?, "round", ?, 0, 0, 0)'
+                    'INSERT INTO game_state (game_id, phase, current_game_set_id, question_revealed, strikes, steal_in_progress, round_pot)
+                     VALUES (?, "lobby", ?, 0, 0, 0, 0)'
                 )->execute([$gameId, $firstSet['id']]);
             }
 
@@ -544,6 +674,15 @@ final class GameActions
         if (!$state || !in_array($state['phase'], $allowedPhases, true)) {
             $phase = $state['phase'] ?? 'none';
             throw new RuntimeException("Action not allowed in phase '{$phase}'");
+        }
+    }
+
+    /** Defense in depth: the cockpit UI already withholds team-select/reveal/strike controls
+     *  until the presenter has revealed the question, but the server enforces it too. */
+    private static function assertQuestionRevealed(?array $state): void
+    {
+        if (!$state || (int) $state['question_revealed'] === 0) {
+            throw new RuntimeException('Question has not been revealed yet');
         }
     }
 

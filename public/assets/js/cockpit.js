@@ -13,12 +13,12 @@
   let busy = false; // guards against double-submits between polls
 
   const CUE_LABELS = {
-    correct: 'Poprawna odpowiedź',
-    strike: 'Strike / Buzzer',
-    round_start: 'Start rundy',
-    reveal: 'Odkrycie odpowiedzi',
-    finale_timer: 'Zegar finału',
-    end_game: 'Koniec gry',
+    correct: 'Odp - Popr',
+    strike: 'Odp - Błąd',
+    round_start: 'Runda - Start',
+    round_end: 'Runda - Koniec',
+    game_start: 'Gra - Start',
+    end_game: 'Gra - Koniec',
   };
 
   function esc(s) {
@@ -27,14 +27,18 @@
     return d.innerHTML;
   }
 
-  async function callAction(action, extra) {
+  // skipDetect: true for actions whose transition cue was already played manually
+  // by the caller (see beginGame()/goNextRound()) — avoids a duplicate playback
+  // on this device from detectAndPlay() re-noticing the same phase change.
+  async function callAction(action, extra, skipDetect) {
     if (busy) return;
     busy = true;
     try {
       const state = await Api.postJson('../api/action.php', { action, game_id: gameId, ...extra });
-      SoundCues.detectAndPlay(prevState, state);
+      if (!skipDetect) SoundCues.detectAndPlay(prevState, state);
       renderState(state);
       prevState = state;
+      return state;
     } catch (e) {
       // Surface a small inline notice rather than an alert() that blocks the host mid-game.
       const banner = document.createElement('div');
@@ -81,9 +85,27 @@
       return;
     }
 
+    if (state.phase === 'lobby') {
+      root.innerHTML = `<div class="prezenter-grid">
+        <div class="panel gate-panel">
+          <h2>Gra gotowa</h2>
+          <p>Gra jest ustawiona jako live. Kliknij, aby rozpocząć — zabrzmi dźwięk startu gry.</p>
+          <button class="btn btn-primary" id="startGameBtn">START GRY</button>
+        </div>
+      </div>`;
+      document.getElementById('startGameBtn').addEventListener('click', beginGame);
+      return;
+    }
+
     const answers = state.answers || [];
     const locked = state.team_select_locked;
-    const canReveal = state.phase === 'round' || state.phase === 'steal';
+    const questionPending = state.phase === 'round' && !state.question_revealed;
+    // Once a steal attempt has resolved (success or failure), nothing more can be
+    // revealed/struck this round — the presenter just clicks ZAKOŃCZ RUNDĘ to bank it.
+    const stealResolved = state.phase === 'steal' && state.steal_result !== 'none';
+    const canReveal = (state.phase === 'round' || state.phase === 'steal' || state.phase === 'round_end') && !questionPending && !stealResolved;
+    const canPlay = (state.phase === 'round' || state.phase === 'steal') && !questionPending && !stealResolved;
+    const canFinish = (state.phase === 'round' && !questionPending) || (state.phase === 'steal' && stealResolved);
 
     const answerRows = answers.map((a, i) => `
       <div class="answer-row">
@@ -112,22 +134,34 @@
             <span class="score-value">${state.teams.red.score}</span>
           </div>
 
+          ${questionPending ? `
+          <div class="panel">
+            <h2>Pytanie ${state.round_number ?? '-'}</h2>
+            <button class="btn btn-primary" id="revealQuestionBtn" style="width:100%;">POKAŻ PYTANIE</button>
+          </div>
+          ` : ''}
+
           <div class="panel">
             <h2>Zespół rozpoczynający</h2>
             <div class="team-select">
-              <button class="team-blue${state.starting_team === 'blue' ? ' selected' : ''}" data-team="blue" ${locked ? 'disabled' : ''}>NIEBIESCY</button>
-              <button class="team-red${state.starting_team === 'red' ? ' selected' : ''}" data-team="red" ${locked ? 'disabled' : ''}>CZERWONI</button>
+              <button class="team-blue${state.starting_team === 'blue' ? ' selected' : ''}" data-team="blue" ${locked || !canPlay ? 'disabled' : ''}>NIEBIESCY</button>
+              <button class="team-red${state.starting_team === 'red' ? ' selected' : ''}" data-team="red" ${locked || !canPlay ? 'disabled' : ''}>CZERWONI</button>
             </div>
-            ${state.phase === 'steal' ? '<span class="steal-badge">KRADZIEŻ AKTYWNA</span>' : ''}
+            ${state.phase === 'steal' && !stealResolved ? '<span class="steal-badge">KRADZIEŻ AKTYWNA</span>' : ''}
+            ${state.phase === 'steal' && stealResolved ? `<span class="steal-badge">${state.steal_result === 'success' ? 'KRADZIEŻ UDANA' : 'KRADZIEŻ NIEUDANA'}</span>` : ''}
           </div>
 
           <div class="panel">
             <h2>Błędy ${state.strikes}/3</h2>
             <div class="strikes-row">${strikeBoxes}</div>
-            <button class="btn-strike" id="strikeBtn" ${canReveal ? '' : 'disabled'}>BŁĄD</button>
+            <button class="btn-strike" id="strikeBtn" ${canPlay ? '' : 'disabled'}>BŁĄD</button>
           </div>
 
-          <button class="btn-finish" id="finishBtn">ZAKOŃCZ RUNDĘ</button>
+          ${state.phase === 'round_end' ? `
+          <button class="btn-finish" id="nextRoundBtn">${state.is_last_round ? 'ZAKOŃCZ GRĘ' : 'NASTĘPNA RUNDA'}</button>
+          ` : `
+          <button class="btn-finish" id="finishBtn" ${canFinish ? '' : 'disabled'}>ZAKOŃCZ RUNDĘ</button>
+          `}
 
           ${state.game.mode === 'free_rounds' && state.phase === 'round' ? `
           <button class="btn btn-danger" id="endGameBtn" style="width:100%;">Zakończ grę (wolne rundy)</button>
@@ -149,9 +183,14 @@
     root.querySelectorAll('.team-select button').forEach((btn) => {
       btn.addEventListener('click', () => callAction('set_team', { team: btn.dataset.team }));
     });
+    const revealQuestionBtn = document.getElementById('revealQuestionBtn');
+    if (revealQuestionBtn) revealQuestionBtn.addEventListener('click', () => callAction('reveal_question'));
     const strikeBtn = document.getElementById('strikeBtn');
     if (strikeBtn) strikeBtn.addEventListener('click', () => callAction('strike'));
-    document.getElementById('finishBtn').addEventListener('click', () => callAction('finish_round'));
+    const finishBtn = document.getElementById('finishBtn');
+    if (finishBtn) finishBtn.addEventListener('click', () => callAction('finish_round'));
+    const nextRoundBtn = document.getElementById('nextRoundBtn');
+    if (nextRoundBtn) nextRoundBtn.addEventListener('click', goNextRound);
     const endGameBtn = document.getElementById('endGameBtn');
     if (endGameBtn) endGameBtn.addEventListener('click', () => {
       if (confirm('Zakończyć grę teraz? Wygra zespół z wyższym wynikiem.')) callAction('end_game');
@@ -163,6 +202,40 @@
         setTimeout(() => btn.classList.remove('flash'), 400);
       });
     });
+  }
+
+  let gating = false; // separate from `busy` — covers the pre-action sound-playback window too
+
+  // START GRY: play game_start, then transition lobby -> round only once it's finished
+  // (Spec: the board must not show "Pytanie 1" until the presenter's music has ended).
+  async function beginGame() {
+    if (gating || busy) return;
+    gating = true;
+    try {
+      await SoundCues.playCue('game_start');
+      await callAction('begin_game', undefined, true);
+    } finally {
+      gating = false;
+    }
+  }
+
+  // NASTĘPNA RUNDA / ZAKOŃCZ GRĘ: round_end already played the moment the round
+  // actually ended (finish_round / the steal resolving — detectAndPlay caught that
+  // transition). This click advances, then plays the cue for wherever it landed:
+  // round_start when another round loaded, or end_game when this was the final
+  // round (game over). Previously it always played round_start, which overlapped
+  // the board's end_game cue on the last round.
+  async function goNextRound() {
+    if (gating || busy) return;
+    gating = true;
+    try {
+      const state = await callAction('advance_round', undefined, true);
+      if (state) {
+        SoundCues.playCue(state.phase === 'finished' ? 'end_game' : 'round_start');
+      }
+    } finally {
+      gating = false;
+    }
   }
 
   async function poll() {
