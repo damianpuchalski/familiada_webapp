@@ -4,15 +4,18 @@ body.board {
   min-height: 100vh;
   margin: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   background:
-    radial-gradient(ellipse 70% 60% at 50% 40%, var(--board-bg-center), var(--board-bg-mid) 55%, var(--board-bg-edge) 100%);
+    radial-gradient(ellipse 90% 75% at 50% 45%, oklch(0.16 0.05 300) 0%, oklch(0.1 0.03 275) 38%, oklch(0.06 0.01 260) 72%);
   color: oklch(0.96 0.01 260);
   font-family: var(--font-body);
 }
 
 .board-stage {
   position: relative;
-  min-height: 100vh;
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -20,17 +23,76 @@ body.board {
   padding: 24px;
 }
 
-.arc-glow {
+/* One-time audio-unlock prompt: browsers block Audio().play() on a tab that's
+   never had a user gesture, and the board never gets clicked (Spec §5.1 — it's
+   a passive display). Whoever sets up the physical screen clicks this once,
+   then it's dismissed and every later poll-triggered cue plays normally. */
+.sound-unlock-overlay {
   position: absolute;
-  width: 46vw;
-  height: 46vw;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: oklch(0.08 0.02 260 / 0.85);
+  z-index: 20;
+}
+.sound-unlock-overlay[hidden] { display: none; }
+.sound-unlock-overlay button {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: clamp(16px, 2vw, 22px);
+  padding: 20px 36px;
+  border-radius: 12px;
+  border: 2px solid var(--color-amber);
+  background: var(--color-amber);
+  color: oklch(0.15 0.02 260);
+  cursor: pointer;
+}
+
+/* Game name banner across the top of the stage (Plansza). */
+.board-game-name {
+  position: absolute;
+  top: 56px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 90vw;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(16px, 2vw, 26px);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--color-amber);
+  text-shadow: 0 0 12px var(--color-amber-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  z-index: 3;
+}
+
+/* Soft radial red/blue haze anchored in the top corners, behind the arcs. */
+.corner-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 8% 15%, oklch(0.5 0.19 25 / 0.35) 0%, transparent 45%),
+    radial-gradient(circle at 92% 15%, oklch(0.5 0.18 250 / 0.35) 0%, transparent 45%);
+}
+
+/* Two concentric glowing arcs per top corner (red = left, blue = right).
+   Sized in vmax so the sweep scales with the projector, not blurred circles. */
+.arc {
+  position: absolute;
+  width: 108vmax;
+  height: 108vmax;
   border-radius: 50%;
-  filter: blur(60px);
-  opacity: 0.35;
   pointer-events: none;
 }
-.arc-glow.red { top: -18vw; left: -18vw; background: var(--color-red); }
-.arc-glow.blue { top: -18vw; right: -18vw; background: var(--color-blue); }
+.arc.red-outer  { top: -85vmax; left: -85vmax;  border: 3px solid oklch(0.62 0.22 25); opacity: 0.55; box-shadow: 0 0 60px oklch(0.62 0.22 25 / 0.6); }
+.arc.red-inner  { top: -74vmax; left: -74vmax;  width: 90vmax; height: 90vmax; border: 2px solid oklch(0.65 0.22 25); opacity: 0.7; box-shadow: 0 0 30px oklch(0.65 0.22 25 / 0.5); }
+.arc.blue-outer { top: -85vmax; right: -85vmax; border: 3px solid oklch(0.62 0.2 250); opacity: 0.55; box-shadow: 0 0 60px oklch(0.62 0.2 250 / 0.6); }
+.arc.blue-inner { top: -74vmax; right: -74vmax; width: 90vmax; height: 90vmax; border: 2px solid oklch(0.65 0.2 250); opacity: 0.7; box-shadow: 0 0 30px oklch(0.65 0.2 250 / 0.5); }
 
 .question-banner {
   font-family: var(--font-body);
@@ -38,68 +100,87 @@ body.board {
   font-size: clamp(22px, 2.6vw, 34px);
   text-align: center;
   max-width: 90vw;
-  margin-bottom: 18px;
+  margin-bottom: clamp(12px, 2vh, 24px);
   min-height: 1.4em;
+  color: oklch(0.96 0.01 260);
 }
 
-.round-total {
+/* Floating running-total chip, docked centered above the answer panel.
+   --chip-h drives both height and the negative top offset so the chip always
+   straddles the panel's top edge the same way at any resolution (design ref). */
+.round-total-chip {
+  --chip-h: clamp(52px, 4.4vw, 64px);
+  position: absolute;
+  top: calc(var(--chip-h) / -2 - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(84px, 7vw, 104px);
+  height: var(--chip-h);
+  border-radius: 12px;
+  border: 3px solid oklch(0.72 0.13 220);
+  background: #050505;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 4;
+  box-shadow: 0 0 22px -2px oklch(0.72 0.13 220 / 0.7);
   font-family: var(--font-led);
+  font-size: clamp(24px, 2.6vw, 32px);
   color: var(--color-amber);
-  background: oklch(0.15 0.02 260 / 0.6);
-  border: 1px solid var(--color-amber-dim);
-  border-radius: var(--radius-pill);
-  padding: 4px 18px;
-  font-size: 15px;
-  margin-bottom: -14px;
-  z-index: 2;
-  letter-spacing: 0.08em;
+  text-shadow: 0 0 14px var(--color-amber);
 }
-.round-total.pulse { animation: glowPulse 0.6s; }
+.round-total-chip.pulse { animation: glowPulse 0.6s; }
+
+/* SUMA readout inside the panel, bottom-right below a divider. */
+.panel-sum {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 18px;
+  margin-top: 12px;
+  border-top: 1px solid oklch(0.24 0.02 260);
+  font-family: var(--font-led);
+  font-size: clamp(15px, 1.6vw, 20px);
+  letter-spacing: 0.1em;
+  color: var(--color-amber);
+  text-shadow: 0 0 10px oklch(0.78 0.17 85 / 0.6);
+}
 
 .board-row {
   display: flex;
-  align-items: stretch;
+  align-items: center; /* score boxes + strikes centered against the panel */
   gap: 18px;
   z-index: 1;
   width: 100%;
   max-width: 1400px;
   justify-content: center;
+  /* Top margin lives here (not on the panel wrap) so the whole row — including
+     the score boxes — centers on the panel while still clearing the floating
+     total chip that pokes above it. */
+  margin-top: clamp(30px, 4vw, 46px);
 }
 
+/* Compact LED score box — the colored border is the only team marker
+   (no CZERWONI/NIEBIESCY label). Dims when the team is off the clock. */
 .score-box {
-  min-width: 140px;
-  background: oklch(0.10 0.02 260 / 0.8);
-  border: 2px solid var(--cockpit-border);
-  border-radius: var(--radius-md);
+  width: clamp(84px, 8vw, 110px);
+  height: clamp(58px, 5.6vw, 76px);
+  flex-shrink: 0;
+  background: #050505;
+  border: 3px solid var(--cockpit-border);
+  border-radius: 14px;
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 18px;
-  gap: 8px;
+  opacity: 0.75;
 }
-.score-box.team-red { border-color: var(--color-red); }
-.score-box.team-blue { border-color: var(--color-blue); }
-.score-box.on-clock.team-red { box-shadow: 0 0 24px oklch(0.60 0.22 18 / 0.55); }
-.score-box.on-clock.team-blue { box-shadow: 0 0 24px oklch(0.62 0.19 250 / 0.55); }
-.score-box .team-label {
-  font-family: var(--font-display);
-  font-size: 13px;
-  letter-spacing: 0.08em;
-}
-.score-box.team-red .team-label { color: var(--color-red); }
-.score-box.team-blue .team-label { color: var(--color-blue); }
-.score-box .team-shape {
-  width: 14px;
-  height: 14px;
-  display: inline-block;
-  margin-right: 6px;
-}
-.score-box.team-red .team-shape { background: var(--color-red); border-radius: 3px; } /* square = red */
-.score-box.team-blue .team-shape { background: var(--color-blue); border-radius: 50%; } /* circle = blue */
+.score-box.team-red { border-color: var(--color-red); box-shadow: 0 0 10px -4px var(--color-red); }
+.score-box.team-blue { border-color: var(--color-blue); box-shadow: 0 0 10px -4px var(--color-blue); }
+.score-box.on-clock { opacity: 1; }
+.score-box.on-clock.team-red { box-shadow: 0 0 24px -2px var(--color-red); }
+.score-box.on-clock.team-blue { box-shadow: 0 0 24px -2px var(--color-blue); }
 .score-box .score-value {
   font-family: var(--font-led);
-  font-size: clamp(36px, 5vw, 56px);
+  font-size: clamp(24px, 2.6vw, 32px);
   color: var(--color-amber);
   text-shadow: 0 0 10px var(--color-amber);
 }
@@ -107,83 +188,122 @@ body.board {
 .strikes-col {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 10px;
-}
-.strike-x {
-  width: 40px;
-  height: 40px;
-  display: flex;
   align-items: center;
   justify-content: center;
-  font-family: var(--font-display);
-  font-size: 24px;
-  color: oklch(0.3 0.02 260);
-  border: 2px solid oklch(0.3 0.02 260);
-  border-radius: 8px;
+  gap: 12px;
 }
-.strike-x.lit {
-  color: var(--color-red);
-  border-color: var(--color-red);
-  background: oklch(0.6 0.22 18 / 0.18);
-  animation: ledIgniteRed 0.6s, shake 0.4s;
+/* Strike = a CSS-drawn "X" (two crossed bars). Invisible until lit, so the
+   board shows genuinely empty slots — not dim boxes — per the design. */
+.strike-x {
+  position: relative;
+  width: clamp(16px, 1.6vw, 22px);
+  height: clamp(16px, 1.6vw, 22px);
+  opacity: 0;
 }
-.strike-x.steal-collapsed {
-  width: 56px;
-  height: 96px;
-  font-size: 40px;
-  opacity: 0.5;
+.strike-x .bar {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-red);
+  box-shadow: 0 0 8px var(--color-red);
 }
-.strike-x.steal-collapsed.lit { opacity: 1; }
+.strike-x .bar.a { transform: translateY(-50%) rotate(45deg); }
+.strike-x .bar.b { transform: translateY(-50%) rotate(-45deg); }
+.strike-x.lit { opacity: 1; }
+.strike-x.just-struck .bar { animation: ledIgniteRed 0.5s ease-out; }
 
+/* Steal mode: a single large X on the stealing team's side, dim until the
+   steal fails, then it ignites full red. */
+.strike-x.big {
+  width: clamp(30px, 3.2vw, 42px);
+  height: clamp(30px, 3.2vw, 42px);
+  opacity: 0.35;
+}
+.strike-x.big .bar {
+  height: 6px;
+  border-radius: 3px;
+  background: oklch(0.4 0.02 260);
+  box-shadow: none;
+}
+.strike-x.big.lit {
+  opacity: 1;
+}
+.strike-x.big.lit .bar {
+  background: var(--color-red);
+  box-shadow: 0 0 14px var(--color-red);
+}
+
+/* Positioning context so the running-total chip can float above the panel. */
+.answer-panel-wrap {
+  position: relative;
+  width: min(940px, 74vw);
+}
 .answer-panel {
   background: repeating-linear-gradient(
     0deg,
-    oklch(0.08 0.02 260) 0px,
-    oklch(0.08 0.02 260) 2px,
-    oklch(0.10 0.02 260) 2px,
-    oklch(0.10 0.02 260) 4px
+    oklch(0.09 0.01 260) 0px,
+    oklch(0.09 0.01 260) 3px,
+    oklch(0.115 0.01 260) 3px,
+    oklch(0.115 0.01 260) 4px
   );
-  border: 1px solid oklch(0.3 0.03 260);
+  border: 3px solid oklch(0.42 0.03 260);
   border-radius: var(--radius-lg);
-  padding: 20px 28px;
-  width: min(720px, 60vw);
+  padding: clamp(24px, 3vw, 34px) clamp(24px, 3vw, 40px) 14px;
+  box-shadow: 0 0 40px -10px oklch(0.6 0.05 260 / 0.6), inset 0 0 60px oklch(0 0 0 / 0.6);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .answer-line {
-  display: grid;
-  grid-template-columns: 34px 1fr 60px;
+  display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: clamp(10px, 1.4vw, 16px);
+  padding: 4px;
   min-height: clamp(30px, 4vh, 44px);
   font-family: var(--font-led);
-  font-size: clamp(18px, 2vw, 26px);
-  border-bottom: 1px dotted oklch(0.3 0.02 260);
+  font-size: clamp(18px, 2vw, 25px);
 }
-.answer-line:last-child { border-bottom: none; }
-.answer-line .idx { color: oklch(0.4 0.02 260); }
-.answer-line .txt { color: transparent; letter-spacing: 0.02em; }
-.answer-line .pts { text-align: right; color: transparent; }
+.answer-line .idx { width: clamp(24px, 2.4vw, 30px); color: var(--color-amber); text-shadow: 0 0 8px var(--color-amber); flex-shrink: 0; }
+.answer-line .txt { color: transparent; letter-spacing: 0.12em; white-space: nowrap; }
+/* Dot-leader placeholder — always visible, fills the gap to the points. */
+.answer-line .dots {
+  flex: 1;
+  align-self: center;
+  height: 0;
+  margin-bottom: 7px;
+  border-bottom: 3px dotted oklch(0.42 0.09 85 / 0.55);
+}
+.answer-line .pts { width: clamp(40px, 4.4vw, 54px); text-align: right; color: transparent; flex-shrink: 0; }
 .answer-line.revealed .txt,
 .answer-line.revealed .pts {
   color: var(--color-amber);
-  text-shadow: 0 0 8px var(--color-amber);
+  text-shadow: 0 0 10px var(--color-amber);
 }
 .answer-line.revealed.just-revealed .txt,
 .answer-line.revealed.just-revealed .pts {
   animation: ledIgnite 0.6s;
 }
 
+/* Steal pill — floats above the panel, colored by the stealing team, blinks. */
 .steal-banner {
-  margin-top: 16px;
-  font-family: var(--font-display);
-  color: var(--color-amber);
-  letter-spacing: 0.1em;
-  font-size: 14px;
-  animation: stealBlink 1.2s infinite;
+  position: relative;
+  z-index: 4;
+  width: fit-content;
+  margin: 4px auto 0;
+  font-family: var(--font-led);
+  font-size: clamp(12px, 1.4vw, 14px);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  padding: 8px 18px;
+  border-radius: var(--radius-pill);
+  color: oklch(0.97 0.01 260);
+  animation: stealBlink 1.2s ease-in-out infinite;
 }
+.steal-banner.team-red { background: var(--color-red); }
+.steal-banner.team-blue { background: var(--color-blue); }
 
 .lobby-message {
   font-family: var(--font-display);
@@ -202,3 +322,11 @@ body.board {
 }
 .game-over-screen .winner.team-blue { color: var(--color-blue); }
 .game-over-screen .winner.team-red { color: var(--color-red); }
+.game-over-screen .final-score {
+  margin-top: 20px;
+  font-family: var(--font-led);
+  font-size: clamp(15px, 1.8vw, 20px);
+  letter-spacing: 0.08em;
+  color: var(--color-amber);
+  text-shadow: 0 0 10px oklch(0.78 0.17 85 / 0.6);
+}

@@ -13,16 +13,28 @@ $pollMs = (int) ($cfg['poll_interval_ms'] ?? 1000);
 <title>Plansza — Familiada</title>
 <link rel="stylesheet" href="assets/css/tokens.css">
 <link rel="stylesheet" href="assets/css/board.css">
+<link rel="stylesheet" href="assets/css/footer.css">
 </head>
 <body class="board">
 <div class="board-stage" id="stage" data-poll-ms="<?= $pollMs ?>">
-  <div class="arc-glow red" aria-hidden="true"></div>
-  <div class="arc-glow blue" aria-hidden="true"></div>
+  <div class="corner-glow" aria-hidden="true"></div>
+  <div class="arc red-outer" aria-hidden="true"></div>
+  <div class="arc red-inner" aria-hidden="true"></div>
+  <div class="arc blue-outer" aria-hidden="true"></div>
+  <div class="arc blue-inner" aria-hidden="true"></div>
+
+  <div class="board-game-name" id="boardGameName" hidden></div>
 
   <div id="content">
     <p class="lobby-message">Oczekiwanie na start gry…</p>
   </div>
+
+  <div class="sound-unlock-overlay" id="soundUnlockOverlay">
+    <button type="button" id="soundUnlockBtn">Kliknij, aby włączyć dźwięk planszy</button>
+  </div>
 </div>
+
+<?php include __DIR__ . '/partials/footer.php'; ?>
 
 <script src="assets/js/api.js"></script>
 <script src="assets/js/sound.js"></script>

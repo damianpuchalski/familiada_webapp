@@ -1,0 +1,85 @@
+/* Shared site footer — trimmed reuse of the OWL Web Design footer from
+   owl-it.pl/owl-web-design (source: css/base.css + css/style.css there):
+   just the small brand badge + copyright row, no nav/brand block.
+   Self-contained: its own fonts, colours and tokens are scoped to .site-footer
+   so it looks identical to the origin without colliding with the Familiada
+   board/cockpit design tokens. */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+.site-footer {
+  /* Ported OWL Web Design palette (base.css :root) — scoped to the footer. */
+  --owl-indigo: #4B3BFF;
+  --owl-dark-bg: #131317;
+  --owl-font-mono: 'IBM Plex Mono', monospace;
+
+  background: var(--owl-dark-bg);
+  color: #6b6784;
+  font-family: var(--owl-font-mono);
+  text-align: left;
+}
+
+.site-footer .wrap {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 48rem) {
+  .site-footer .wrap {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.site-footer .mono { font-family: var(--owl-font-mono); }
+
+.site-footer__bottom-inner {
+  padding-top: 1.1rem;
+  padding-bottom: 1.1rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.site-footer__badge {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.42rem;
+  background: var(--owl-indigo);
+  display: flex;
+  flex-direction: column;
+  padding: 0.19rem 0 0.16rem;
+  flex: none;
+}
+
+.site-footer__badge .brand__dots {
+  display: flex;
+  gap: 0.08rem;
+  padding-left: 0.25rem;
+}
+
+.site-footer__badge .brand__dot {
+  width: 0.12rem;
+  height: 0.12rem;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.site-footer__badge .brand__dot:nth-child(2) { background: rgba(255, 255, 255, 0.6); }
+.site-footer__badge .brand__dot:nth-child(3) { background: rgba(255, 255, 255, 0.4); }
+
+.site-footer__badge .brand__mark {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.site-footer__badge img {
+  width: 0.75rem;
+  height: auto;
+}
