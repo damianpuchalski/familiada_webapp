@@ -40,6 +40,18 @@ json_guard(function (): void {
             GameActions::finishRound($pdo, $gameId);
             break;
 
+        case 'advance_round':
+            GameActions::advanceRound($pdo, $gameId);
+            break;
+
+        case 'begin_game':
+            GameActions::beginGame($pdo, $gameId);
+            break;
+
+        case 'reveal_question':
+            GameActions::revealQuestion($pdo, $gameId);
+            break;
+
         case 'end_game':
             // Spec §4.4: free_rounds only — "when the sets run out (or the host ends the
             // game), the higher score wins." Classic mode ends only automatically at >=300.

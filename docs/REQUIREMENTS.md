@@ -37,7 +37,7 @@ Plain-language record of what was agreed. The [`ARCHITECTURE.md`](ARCHITECTURE.m
 
 ## Sounds
 - The admin can **set sounds** for correct answers, strikes, and other needed cues.
-- Cue list to cover: correct answer, strike/buzzer, round start, answer reveal, finale timer, end-of-game.
+- Cue list to cover: correct answer, strike/buzzer, round start, round end, game start, end-of-game.
 
 ## Game management & history
 - The admin can **design multiple games**.

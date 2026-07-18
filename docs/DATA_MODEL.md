@@ -39,6 +39,7 @@ Two rows per game.
   - `game_id`
   - `phase` — `lobby` | `round` | `steal` | `round_end` | `finale` | `finished`
   - `current_game_set_id` — which round/set is live
+  - `question_revealed` — bool; while `phase=round` and this is 0, the public board and unauthenticated `state.php` blank the question text and all answers (round number still shown) so a contestant can't read ahead of the presenter. The presenter's cockpit always sees the real text. Set to 0 whenever a new round loads; flipped to 1 by the presenter's "POKAŻ PYTANIE" click.
   - `active_team` — which team currently owns answering (`blue`|`red`)
   - `starting_team` — the team that started this round (strikes are tracked for them)
   - `strikes` — 0–3
@@ -64,7 +65,7 @@ Revealed answers are tracked on `game_answers.revealed`, so the board can render
 ## Sounds
 
 - **`sound_sets`** — `id`, `name`.
-- **`sounds`** — `id`, `sound_set_id`, `cue` (`correct`|`strike`|`round_start`|`reveal`|`finale_timer`|`end_game`), `file_path`.
+- **`sounds`** — `id`, `sound_set_id`, `cue` (`correct`|`strike`|`round_start`|`round_end`|`game_start`|`end_game`), `file_path`. Cues fire on state-transition edges detected client-side by diffing consecutive poll snapshots: `correct` on a new revealed answer, `strike` when the strike count increases, `round_start` on entering `phase=round` from `round_end` (a new round, not the game's first), `round_end` on entering `phase=round_end`, `game_start` on the `lobby`→`round` transition (game leaves the lobby), `end_game` on entering `phase=finished`.
 
 ## Notes for implementers
 - All timestamps use the **server** clock. `state.php` must return the server `now` so clients can compute the finale countdown consistently.

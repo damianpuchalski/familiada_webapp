@@ -60,7 +60,7 @@ familiada/
 │  ├─ index.php             ← Plansza board at the root (Grand Finale board = V2)
 │  ├─ admin/                ← Prezenter, Administrator, editor, login (finale admin = V2)
 │  ├─ api/                  ← state.php, action.php, auth, CRUD, sound upload
-│  └─ assets/sounds/        ← default/ + klasyczny|retro|filmowy packs (starter WAVs shipped).
+│  └─ assets/sounds/        ← default/ + klasyczny|retro|modern packs (starter WAVs shipped).
 │                              MUST live under public/ (the web root) — anything outside it
 │                              404s once the docroot points at public/ (Spec §9).
 ```
@@ -83,7 +83,7 @@ Extract shared tokens (color/type/spacing) into **one stylesheet** and build bot
 Setup scaffolding is already in place; wire it up:
 
 1. **Auth:** `config.example.php` now has `auth_password_hash` + `session_lifetime`. Build the PHP-session **verify/logout endpoints** and **route guards** that read them; replace the design's client-side password mock. Guard all `admin/` routes; leave the board (public root `index.php`) public. (Spec §7)
-2. **Sound packs:** the three packs (Klasyczny / Retro / Filmowy) and the Klasyczny cue rows are **already seeded** in `db/schema.sql`, and starter WAVs ship under `public/assets/sounds/`. Build the upload/list/delete endpoints and the default-fallback player on top. (Spec §6, §8)
+2. **Sound packs:** the three packs (Klasyczny / Retro / Modern) and the Klasyczny + Modern cue rows are **already seeded** in `db/schema.sql`, and starter WAVs ship under `public/assets/sounds/`. Build the upload/list/delete endpoints and the default-fallback player on top. (Spec §6, §8)
 3. **Finale off:** ensure the editor's finale toggle is rendered **disabled** ("Wkrótce (V2)") and `games.grand_finale` stays `0`; never enter the `finale` phase. (Spec §4.5)
 
 ## 7. Build order

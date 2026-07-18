@@ -17,6 +17,7 @@ $headerMultiplierChip = null;
 <title>Administrator — Familiada</title>
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/cockpit.css">
+<link rel="stylesheet" href="../assets/css/footer.css">
 </head>
 <body class="cockpit">
 <?php
@@ -26,6 +27,8 @@ include __DIR__ . '/_header.php';
 <div class="admin-shell" id="adminRoot">
   <p style="color:var(--cockpit-text-muted);">Wczytywanie…</p>
 </div>
+
+<?php $footerAssetPrefix = '../'; include __DIR__ . '/../partials/footer.php'; ?>
 
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/sound.js"></script>

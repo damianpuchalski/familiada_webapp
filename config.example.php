@@ -25,7 +25,7 @@ return [
     'session_lifetime' => 0,
 
     // Where uploaded/seeded sound files live on disk (per-pack subfolders under here:
-    // default/, klasyczny/, retro/, filmowy/). MUST be under public/ (the web root,
+    // default/, klasyczny/, retro/, modern/). MUST be under public/ (the web root,
     // per §9) — board/Prezenter play these back as plain <audio src> URLs, so
     // anything outside public/ is unreachable over HTTP. See public/assets/sounds/README.md.
     'sounds_path' => __DIR__ . '/public/assets/sounds',

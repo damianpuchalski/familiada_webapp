@@ -20,6 +20,7 @@ $headerMultiplierChip = null;
 <title>Prezenter — Familiada</title>
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/cockpit.css">
+<link rel="stylesheet" href="../assets/css/footer.css">
 </head>
 <body class="cockpit">
 <?php include __DIR__ . '/_header.php'; ?>
@@ -27,6 +28,8 @@ $headerMultiplierChip = null;
 <div id="prezenter-root" data-poll-ms="<?= $pollMs ?>">
   <p style="padding:24px;color:var(--cockpit-text-muted);">Wczytywanie…</p>
 </div>
+
+<?php $footerAssetPrefix = '../'; include __DIR__ . '/../partials/footer.php'; ?>
 
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/sound.js"></script>

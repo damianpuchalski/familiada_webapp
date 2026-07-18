@@ -14,12 +14,12 @@
   };
 
   const CUE_LABELS = {
-    correct: 'Poprawna odpowiedź',
-    strike: 'Strike / Buzzer',
-    round_start: 'Start rundy',
-    reveal: 'Odkrycie odpowiedzi',
-    finale_timer: 'Zegar finału',
-    end_game: 'Koniec gry',
+    correct: 'Odp - Popr',
+    strike: 'Odp - Błąd',
+    round_start: 'Runda - Start',
+    round_end: 'Runda - Koniec',
+    game_start: 'Gra - Start',
+    end_game: 'Gra - Koniec',
   };
 
   let state = {
@@ -198,9 +198,8 @@
             <button data-mode="free_rounds" class="${d.mode === 'free_rounds' ? 'active' : ''}">Wolne rundy</button>
           </div>
         </div>
-        <div class="field"><label>Finał (V2)</label>
-          <div class="toggle-2"><button disabled>Wyłączony</button></div>
-          <span class="disabled-hint">Wkrótce (V2)</span>
+        <div class="field field-narrow"><label>Finał (Nie aktywny)</label>
+          <div class="toggle-2"><button disabled>Wył</button></div>
         </div>
         <div class="field"><label>Zestaw dźwięków</label><select id="soundSetSelect">${soundOptions}</select></div>
       </div>
@@ -308,8 +307,8 @@
         <span class="file-state${c.has_file ? ' has-file' : ''}">
           ${c.has_file ? esc(c.file_path.split('/').pop()) : 'Brak przypisanego pliku — odtwarzany będzie dźwięk domyślny'}
         </span>
-        <button data-play="${c.url}">▶ Odsłuchaj</button>
-        ${c.has_file ? `<button data-remove-cue="${c.cue}">Usuń</button>` : '<span></span>'}
+        <button class="btn btn-secondary" data-play="${c.url}">▶ Odsłuchaj</button>
+        ${c.has_file ? `<button class="btn btn-secondary" data-remove-cue="${c.cue}">Usuń</button>` : '<span></span>'}
         <label class="btn btn-secondary" style="cursor:pointer;">
           ${c.has_file ? 'Zamień plik' : 'Wybierz plik'}
           <input type="file" accept="audio/*" data-upload-cue="${c.cue}" style="display:none;">

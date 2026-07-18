@@ -23,7 +23,7 @@ require_once __DIR__ . '/../lib/config.php';
  */
 final class SoundLibrary
 {
-    public const CUES = ['correct', 'strike', 'round_start', 'reveal', 'finale_timer', 'end_game'];
+    public const CUES = ['correct', 'strike', 'round_start', 'round_end', 'game_start', 'end_game'];
 
     /**
      * Max accepted size for a single uploaded cue file, in bytes. Cues are short
@@ -58,7 +58,7 @@ final class SoundLibrary
 
     public static function folderForPackName(string $packName): string
     {
-        // Packs are fixed ASCII names (Klasyczny/Retro/Filmowy); lowercase maps 1:1 to folder names.
+        // Packs are fixed ASCII names (Klasyczny/Retro/Modern); lowercase maps 1:1 to folder names.
         return strtolower($packName);
     }
 

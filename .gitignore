@@ -25,6 +25,11 @@ Thumbs.db
 
 deploy.local.env
 
+# Design-time source audio — large third-party (copyrighted TV-soundtrack) rips
+# kept locally for cutting the cue .wavs; not needed at runtime, never committed.
+design/*.mp3
+design/sounds_split/
+
 # Uploaded sound files (keep the folder, ignore large audio) — served from under
 # public/ since the webroot is public/ (Spec §9); starter/seeded packs are tracked
 # explicitly below despite the pattern.
@@ -33,3 +38,4 @@ public/assets/sounds/**/*.wav
 public/assets/sounds/**/*.ogg
 !public/assets/sounds/default/*.wav
 !public/assets/sounds/klasyczny/*.wav
+!public/assets/sounds/modern/*.wav

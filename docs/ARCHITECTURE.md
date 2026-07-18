@@ -92,7 +92,7 @@ Cost: a copy step at game start. Worth it for trustworthy history. (See `DATA_MO
 
 ## Sounds
 
-HTML5 `<audio>` in the browser. A configurable **sound set** per game. Cues to support: correct answer (ding), wrong answer / strike (buzzer), round start, answer reveal, finale timer tick, end-of-game. Triggered by *transitions* in the polled state (e.g. play buzzer once when strike count increases), not on every poll.
+HTML5 `<audio>` in the browser. A configurable **sound set** per game. Cues to support: correct answer (ding), wrong answer / strike (buzzer), round start, round end, game start, end-of-game. Triggered by *transitions* in the polled state (e.g. play buzzer once when strike count increases), not on every poll.
 
 ## Non-negotiable quality floor
 

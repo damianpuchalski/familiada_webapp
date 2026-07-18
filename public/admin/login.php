@@ -25,6 +25,7 @@ $expired = isset($_GET['expired']);
 <title>Logowanie — Familiada</title>
 <link rel="stylesheet" href="../assets/css/tokens.css">
 <link rel="stylesheet" href="../assets/css/cockpit.css">
+<link rel="stylesheet" href="../assets/css/footer.css">
 </head>
 <body class="cockpit">
 <div class="login-wrap">
@@ -47,6 +48,7 @@ $expired = isset($_GET['expired']);
     <div class="login-footer">Familiada — dostęp tylko dla prowadzącego.</div>
   </form>
 </div>
+<?php $footerAssetPrefix = '../'; include __DIR__ . '/../partials/footer.php'; ?>
 <script src="../assets/js/api.js"></script>
 <script src="../assets/js/login.js"></script>
 </body>

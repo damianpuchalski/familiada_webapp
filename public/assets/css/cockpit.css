@@ -3,8 +3,13 @@
 
 body.cockpit {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background: radial-gradient(ellipse at 50% 0%, oklch(0.16 0.02 260), var(--cockpit-bg) 70%);
 }
+
+/* Keep the shared footer pinned to the bottom when page content is short. */
+body.cockpit .site-footer { margin-top: auto; }
 
 .cockpit-header {
   position: sticky;
@@ -57,7 +62,7 @@ body.cockpit {
 
 /* ---------- Login (Logowanie) ---------- */
 .login-wrap {
-  min-height: 100vh;
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -301,6 +306,7 @@ body.cockpit {
   cursor: pointer;
   font-size: 15px;
 }
+.btn-finish:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .cue-grid {
   display: grid;
@@ -317,6 +323,28 @@ body.cockpit {
   cursor: pointer;
 }
 .cue-btn:active, .cue-btn.flash { animation: cueFlash 0.4s; }
+
+.gate-panel {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 48px 24px;
+}
+.gate-panel h2 {
+  font-size: 22px;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--cockpit-text);
+  margin-bottom: 10px;
+}
+.gate-panel p {
+  color: var(--cockpit-text-muted);
+  margin-bottom: 20px;
+}
+.gate-panel .btn-primary {
+  width: auto;
+  padding: 16px 40px;
+  font-size: 17px;
+}
 
 .game-over-banner {
   grid-column: 1 / -1;
@@ -382,13 +410,16 @@ body.cockpit {
 
 .editor-header {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
+  grid-template-columns: 350px 250px 150px 180px;
   gap: 14px;
   margin-bottom: 24px;
 }
+.field-narrow .toggle-2 button { padding-left: 6px; padding-right: 6px; }
 .field { display: flex; flex-direction: column; gap: 6px; }
 .field label { font-size: 12px; color: var(--cockpit-text-muted); }
-.field input[type="text"], .field select, .field input[type="number"] {
+.field input[type="text"], .field select, .field input[type="number"],
+.question-block-header input[type="text"],
+.answer-edit-row input[type="text"], .answer-edit-row input[type="number"] {
   padding: 9px 10px;
   border-radius: 6px;
   border: 1px solid var(--cockpit-border);
@@ -396,9 +427,19 @@ body.cockpit {
   color: var(--cockpit-text);
 }
 .toggle-2 { display: flex; border: 1px solid var(--cockpit-border); border-radius: 6px; overflow: hidden; }
-.toggle-2 button { flex: 1; background: var(--cockpit-panel-alt); border: none; color: var(--cockpit-text); padding: 9px; cursor: pointer; }
+.toggle-2 button {
+  flex: 1 1 0;
+  min-width: 0;
+  background: var(--cockpit-panel-alt);
+  border: none;
+  color: var(--cockpit-text);
+  padding: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
 .toggle-2 button.active { background: var(--color-amber); color: oklch(0.15 0.02 260); }
-.disabled-hint { font-size: 11px; color: var(--cockpit-text-muted); margin-top: 4px; }
 
 .question-block {
   background: var(--cockpit-panel);

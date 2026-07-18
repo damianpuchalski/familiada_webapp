@@ -18,7 +18,7 @@ public/assets/sounds/
 ├─ default/     ← fallback cues, always present. Played when a pack has no file for a cue.
 ├─ klasyczny/   ← "Klasyczny" pack — seeded with starter sounds (same as default).
 ├─ retro/       ← "Retro" pack — empty; falls back to default until files are uploaded.
-└─ filmowy/     ← "Filmowy" pack — empty; falls back to default until files are uploaded.
+└─ modern/      ← "Modern" pack — seeded with starter sounds (same as default).
 ```
 
 ## Cues (six per pack)
@@ -28,8 +28,8 @@ public/assets/sounds/
 | `correct.wav`      | `correct`      | An answer is revealed correctly (ding). |
 | `strike.wav`       | `strike`       | A strike / wrong answer (buzzer). |
 | `round_start.wav`  | `round_start`  | A new round begins (fanfare). |
-| `reveal.wav`       | `reveal`       | Answer slot lights up on the board (blip). |
-| `finale_timer.wav` | `finale_timer` | Grand-finale countdown beep. **(V2 — finale disabled in V1.)** |
+| `round_end.wav`    | `round_end`    | A round closes / points are banked. |
+| `game_start.wav`   | `game_start`   | The game leaves the lobby for the first round. |
 | `end_game.wav`     | `end_game`     | Game over (closing chord). |
 
 ## Notes
@@ -39,5 +39,5 @@ public/assets/sounds/
 - Uploaded files are stored here (`sounds_path`) and the path per pack + cue is persisted in
   the `sounds` table, relative to `sounds_path` (e.g. `klasyczny/correct.wav`). A cue with no
   row / missing file falls back to `default/<cue>.wav`.
-- Keep the three pack folder names (`klasyczny`, `retro`, `filmowy`) in sync with the
+- Keep the three pack folder names (`klasyczny`, `retro`, `modern`) in sync with the
   `sound_sets.name` rows and the editor's picker.
